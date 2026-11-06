@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>電動車電池產品數位護照 (Battery Passport) 3D 數位孿生展示系統</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts: Inter, Orbitron, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- GSAP Animation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      user-select: none;
+      background-color: #030712;
+    }
+    .font-orbitron {
+      font-family: 'Orbitron', monospace;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      outline: none;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+    .glass-card-subtle {
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(16, 185, 129, 0.35);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(16, 185, 129, 0.65);
+    }
+    /* Pulse Glow Animations */
+    @keyframes pulse-emerald {
+      0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+      50% { box-shadow: 0 0 28px rgba(16, 185, 129, 0.8); }
+    }
+    .animate-glow-emerald {
+      animation: pulse-emerald 2s infinite ease-in-out;
+    }
+    @keyframes pulse-cyan {
+      0%, 100% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
+      50% { box-shadow: 0 0 28px rgba(6, 182, 212, 0.8); }
+    }
+    .animate-glow-cyan {
+      animation: pulse-cyan 2s infinite ease-in-out;
+    }
+    /* QR Scan Line Animation */
+    @keyframes scanline {
+      0% { top: 0%; opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { top: 100%; opacity: 0.8; }
+    }
+    .scan-line {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #10b981, #38bdf8, transparent);
+      box-shadow: 0 0 12px #10b981;
+      animation: scanline 2.2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="w-screen h-screen m-0 p-0 text-slate-100 overflow-hidden relative">
+
+  <!-- 3D Canvas Mount Point -->
+  <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+  <!-- UI OVERLAY -->
+  <div class="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-3 sm:p-5">
+
+    <!-- Top Bar: Header & Lifecycle Stages -->
+    <header class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pointer-events-auto">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 text-lg shadow-lg shadow-emerald-500/20">
+            <i class="fa-solid fa-car-battery"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg sm:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-emerald-200 to-teal-400 font-orbitron">
+                EV BATTERY PASSPORT 3D
+              </h1>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-mono">EU 2023/1542</span>
+            </div>
+            <p class="text-xs text-slate-400 font-medium">歐盟電動車電池產品數位護照 (DPP) 數位孿生與全生命週期互動系統</p>
+          </div>
+        </div>
+
+        <!-- Research Architect Signature Badge -->
+        <div class="inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-xl bg-slate-900/80 border border-teal-500/30 text-teal-300 text-[11px] shadow-sm">
+          <i class="fa-solid fa-flask-vial text-teal-400"></i>
+          <span>系統研究架構：<strong class="text-white font-semibold">工研院綠能所 劉坤興 博士 製作</strong></span>
+        </div>
+      </div>
+
+      <!-- Lifecycle Stage Selector Buttons -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="glass-card p-1 rounded-2xl flex items-center gap-1 text-xs">
+          <button id="stage-mfg-btn" onclick="setLifecycleStage('mfg')" class="px-3 py-1.5 rounded-xl font-bold bg-emerald-500 text-slate-950 transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-industry"></i><span>1. 製造生產</span>
+          </button>
+          <button id="stage-ops-btn" onclick="setLifecycleStage('ops')" class="px-3 py-1.5 rounded-xl font-medium text-slate-300 hover:text-white transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-gauge-high"></i><span>2. 運作與SOH</span>
+          </button>
+          <button id="stage-service-btn" onclick="setLifecycleStage('service')" class="px-3 py-1.5 rounded-xl font-medium text-slate-300 hover:text-white transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-wrench"></i><span>3. 維修更換</span>
+          </button>
+          <button id="stage-secondlife-btn" onclick="setLifecycleStage('secondlife')" class="px-3 py-1.5 rounded-xl font-medium text-slate-300 hover:text-white transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-solar-panel"></i><span>4. 梯次利用 (BESS)</span>
+          </button>
+          <button id="stage-recycle-btn" onclick="setLifecycleStage('recycle')" class="px-3 py-1.5 rounded-xl font-medium text-slate-300 hover:text-white transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-recycle"></i><span>5. 報廢回收</span>
+          </button>
+        </div>
+
+        <!-- 3D Exploded View Toggle -->
+        <button id="exploded-btn" onclick="toggleExplodedView()" class="glass-card px-3.5 py-2 rounded-xl text-xs font-semibold text-cyan-300 hover:text-white hover:border-cyan-400/60 transition-all flex items-center gap-1.5 shadow-lg">
+          <i id="exploded-icon" class="fa-solid fa-boxes-stacked"></i>
+          <span id="exploded-text">結構拆解透視</span>
+        </button>
+
+        <!-- Reset Camera -->
+        <button onclick="resetCamera()" title="重置視角" class="glass-card w-9 h-9 rounded-xl flex items-center justify-center text-slate-300 hover:text-emerald-400 hover:border-emerald-400 transition-all">
+          <i class="fa-solid fa-arrows-rotate"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Floating Hotspots Indicator / Tip -->
+    <div class="flex justify-between items-end pointer-events-none">
+      <div class="glass-card px-3.5 py-2 rounded-2xl text-xs text-slate-300 max-w-sm hidden sm:block pointer-events-auto">
+        <div class="flex items-center gap-2 text-emerald-400 font-bold mb-0.5">
+          <i class="fa-solid fa-hand-pointer animate-bounce"></i>
+          <span>3D 互動提示</span>
+        </div>
+        <p class="text-[11px] text-slate-400">
+          點擊電池包外殼上的 <strong class="text-white">QR Code 銘牌</strong> 開啟 DPP 護照；點選 <strong class="text-cyan-300">BMS 模組</strong> 或 <strong class="text-emerald-300">電芯模組</strong> 可聚焦細部參數。
+        </p>
+      </div>
+
+      <!-- Quick Action: Scan QR Code -->
+      <button onclick="simulateScanQRCode()" class="glass-card px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-900 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 flex items-center gap-2 shadow-lg shadow-emerald-500/30 transition-all pointer-events-auto transform hover:scale-105 active:scale-95">
+        <i class="fa-solid fa-qrcode text-base"></i>
+        <span>掃描電池 QR Code (DPP)</span>
+      </button>
+    </div>
+
+    <!-- Bottom Telemetry HUD: Real-time BMS & SOH Upload Stream -->
+    <footer class="glass-card w-full max-w-5xl mx-auto rounded-3xl p-3 sm:p-4 pointer-events-auto flex flex-col gap-3">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <!-- Live Battery Metrics -->
+        <div class="flex items-center gap-4 sm:gap-6 flex-wrap">
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase font-mono tracking-wider flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>電池健康狀態 (SOH)</span>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span id="soh-value-display" class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200 font-mono">
+                94.2%
+              </span>
+              <span id="soh-status-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-medium">
+                優良 (一級狀態)
+              </span>
+            </div>
+          </div>
+
+          <div class="h-8 w-px bg-slate-800 hidden sm:block"></div>
+
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase font-mono">充放電循環次數</div>
+            <div id="cycle-count-display" class="text-lg sm:text-xl font-bold text-white font-mono">428 次</div>
+          </div>
+
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase font-mono">Pack 額定容量 / 電壓</div>
+            <div class="text-sm sm:text-base font-bold text-slate-200 font-mono">82.5 kWh / 400V</div>
+          </div>
+
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase font-mono">模組溫度 / 內阻</div>
+            <div id="temp-res-display" class="text-sm sm:text-base font-bold text-cyan-300 font-mono">26.4°C / 18.2 mΩ</div>
+          </div>
+        </div>
+
+        <!-- SOH Sync to DPP Action -->
+        <div class="flex items-center gap-2">
+          <div class="text-right hidden sm:block">
+            <div class="text-[10px] text-slate-400 font-mono">DPP 鏈上記錄版本</div>
+            <div id="sync-timestamp" class="text-[11px] text-slate-300 font-mono">2026-11-06 16:40:12 UTC</div>
+          </div>
+          <button id="upload-soh-btn" onclick="triggerManualSOHUpload()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 text-xs font-semibold flex items-center gap-2 transition-all shadow-md active:scale-95">
+            <i id="upload-icon" class="fa-solid fa-cloud-arrow-up"></i>
+            <span>動態上傳 SOH 至 DPP</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SOH Degradation Progress Bar -->
+      <div class="flex flex-col gap-1">
+        <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+          <span>出廠初始容量 (100% SOH)</span>
+          <span class="text-amber-400 font-semibold">梯次利用閾值 (80% SOH)</span>
+          <span class="text-red-400 font-semibold">報廢回收閾值 (70% SOH)</span>
+        </div>
+        <div class="w-full h-2 rounded-full bg-slate-800/80 overflow-hidden relative">
+          <div id="soh-progress-bar" class="h-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-400 rounded-full transition-all duration-700" style="width: 94.2%;"></div>
+          <div class="absolute top-0 bottom-0 left-[80%] w-0.5 bg-amber-400/80" title="梯次利用標準"></div>
+          <div class="absolute top-0 bottom-0 left-[70%] w-0.5 bg-red-400/80" title="強制回收標準"></div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- MODAL: DPP BATTERY PASSPORT DIGITAL VIEWER (Triggered by QR Code) -->
+  <div id="dpp-modal" class="fixed inset-0 z-30 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-5">
+    <div class="glass-card w-full max-w-4xl max-h-[92vh] rounded-3xl p-5 sm:p-7 flex flex-col overflow-hidden relative">
+      
+      <!-- Modal Close Button -->
+      <button onclick="closeDPPModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center transition-colors">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- DPP Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-700/60">
+        <div class="flex items-center gap-3.5">
+          <!-- Live QR Code Canvas Box -->
+          <div class="relative w-16 h-16 rounded-xl bg-white p-1.5 flex items-center justify-center shadow-lg overflow-hidden shrink-0">
+            <svg id="qr-svg-preview" class="w-full h-full text-slate-900" viewBox="0 0 100 100" fill="currentColor">
+              <!-- Procedural Styled QR Code Matrix -->
+              <rect width="100" height="100" fill="#ffffff"/>
+              <!-- Marker Top Left -->
+              <rect x="10" y="10" width="24" height="24" fill="#0f172a"/>
+              <rect x="14" y="14" width="16" height="16" fill="#ffffff"/>
+              <rect x="18" y="18" width="8" height="8" fill="#0f172a"/>
+              <!-- Marker Top Right -->
+              <rect x="66" y="10" width="24" height="24" fill="#0f172a"/>
+              <rect x="70" y="14" width="16" height="16" fill="#ffffff"/>
+              <rect x="74" y="18" width="8" height="8" fill="#0f172a"/>
+              <!-- Marker Bottom Left -->
+              <rect x="10" y="66" width="24" height="24" fill="#0f172a"/>
+              <rect x="14" y="70" width="16" height="16" fill="#ffffff"/>
+              <rect x="18" y="74" width="8" height="8" fill="#0f172a"/>
+              <!-- Center Random Pixels -->
+              <rect x="42" y="12" width="6" height="6" fill="#0f172a"/>
+              <rect x="52" y="18" width="6" height="6" fill="#0f172a"/>
+              <rect x="44" y="38" width="12" height="12" fill="#10b981"/>
+              <rect x="12" y="42" width="8" height="6" fill="#0f172a"/>
+              <rect x="28" y="48" width="6" height="8" fill="#0f172a"/>
+              <rect x="42" y="68" width="8" height="8" fill="#0f172a"/>
+              <rect x="68" y="44" width="8" height="6" fill="#0f172a"/>
+              <rect x="78" y="58" width="6" height="12" fill="#0f172a"/>
+              <rect x="60" y="74" width="12" height="6" fill="#0f172a"/>
+              <rect x="78" y="78" width="8" height="8" fill="#0f172a"/>
+            </svg>
+            <div class="scan-line"></div>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                EU BATTERY PASSPORT VERIFIED
+              </span>
+              <span class="text-[10px] font-mono text-slate-400">GS1 Digital Link Compliant</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-bold text-white mt-0.5 font-orbitron">
+              PACK-ID: <span class="text-emerald-400 font-mono">BAT-EU-2026-8842-TW</span>
+            </h2>
+            <div class="text-xs text-slate-400 font-mono">
+              URN: <span class="text-cyan-300">urn:epc:id:sgtin:4710001.082500.8842</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compliant Standard Chips -->
+        <div class="flex flex-col sm:items-end text-xs font-mono">
+          <div class="text-slate-400">驗證依據法規</div>
+          <div class="text-white font-semibold">Regulation (EU) 2023/1542</div>
+          <div class="text-[11px] text-emerald-400">第三方稽核認證機構：TÜV SÜD</div>
+        </div>
+      </div>
+
+      <!-- DPP Content Tabs -->
+      <div class="flex items-center gap-2 pt-3 pb-2 border-b border-slate-800 text-xs overflow-x-auto">
+        <button id="tab-btn-general" onclick="switchDPPTab('general')" class="px-3.5 py-1.5 rounded-xl font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+          <i class="fa-solid fa-circle-info mr-1"></i>基本規格與碳足跡
+        </button>
+        <button id="tab-btn-materials" onclick="switchDPPTab('materials')" class="px-3.5 py-1.5 rounded-xl font-medium text-slate-400 hover:text-white">
+          <i class="fa-solid fa-atom mr-1"></i>關鍵材料與再生比例
+        </button>
+        <button id="tab-btn-soh" onclick="switchDPPTab('soh')" class="px-3.5 py-1.5 rounded-xl font-medium text-slate-400 hover:text-white">
+          <i class="fa-solid fa-heart-pulse mr-1"></i>BMS動態性能與SOH歷程
+        </button>
+        <button id="tab-btn-circularity" onclick="switchDPPTab('circularity')" class="px-3.5 py-1.5 rounded-xl font-medium text-slate-400 hover:text-white">
+          <i class="fa-solid fa-arrows-spin mr-1"></i>維修、梯次利用與回收簽章
+        </button>
+      </div>
+
+      <!-- TAB 1: General & Carbon Footprint -->
+      <div id="tab-content-general" class="tab-pane overflow-y-auto py-4 space-y-4 pr-1">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="glass-card-subtle p-3.5 rounded-2xl border border-slate-800">
+            <div class="text-xs text-slate-400">額定電容量 & 能量</div>
+            <div class="text-lg font-bold text-white font-mono mt-1">206 Ah / 82.4 kWh</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">公稱工作電壓: 400.0 V (Max 456V)</div>
+          </div>
+          <div class="glass-card-subtle p-3.5 rounded-2xl border border-slate-800">
+            <div class="text-xs text-slate-400">全生命週期碳足跡 (CFP)</div>
+            <div class="text-lg font-bold text-emerald-300 font-mono mt-1">54.8 kg CO₂e / kWh</div>
+            <div class="text-[11px] text-emerald-400/80 mt-0.5">優於歐盟 2026 年效能等級 Class A</div>
+          </div>
+          <div class="glass-card-subtle p-3.5 rounded-2xl border border-slate-800">
+            <div class="text-xs text-slate-400">電芯型式與化學配方</div>
+            <div class="text-lg font-bold text-cyan-300 font-mono mt-1">NMC 811 (Prismatic)</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">方殼大電芯 • 1P96S 拓撲</div>
+          </div>
+        </div>
+
+        <div class="glass-card-subtle p-4 rounded-2xl border border-slate-800 space-y-2">
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-tree text-emerald-400"></i>
+            <span>歐盟碳足跡分階段宣告與憑證連結 (PEF 規範)</span>
+          </h4>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
+            <div class="bg-slate-900/60 p-2.5 rounded-xl">
+              <span class="text-slate-400 text-[10px]">原物料開採提煉</span>
+              <p class="font-mono text-emerald-300 font-semibold mt-0.5">34.2 kg CO₂e/kWh</p>
+            </div>
+            <div class="bg-slate-900/60 p-2.5 rounded-xl">
+              <span class="text-slate-400 text-[10px]">電芯與Pack組裝製造</span>
+              <p class="font-mono text-cyan-300 font-semibold mt-0.5">14.1 kg CO₂e/kWh</p>
+            </div>
+            <div class="bg-slate-900/60 p-2.5 rounded-xl">
+              <span class="text-slate-400 text-[10px]">跨國航運物流運輸</span>
+              <p class="font-mono text-slate-200 font-semibold mt-0.5">3.5 kg CO₂e/kWh</p>
+            </div>
+            <div class="bg-slate-900/60 p-2.5 rounded-xl">
+              <span class="text-slate-400 text-[10px]">產品生命週期末期 (EoL)</span>
+              <p class="font-mono text-amber-300 font-semibold mt-0.5">3.0 kg CO₂e/kWh</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Materials & Recycled Content -->
+      <div id="tab-content-materials" class="tab-pane hidden overflow-y-auto py-4 space-y-4 pr-1">
+        <div class="glass-card-subtle p-4 rounded-2xl border border-slate-800">
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-cyan-400"></i>
+            <span>關鍵原物料成分與法規回收料比例宣告 (EU 2023/1542 第8條)</span>
+          </h4>
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300">鈷 (Cobalt, Co) - 含量 11.2 kg</span>
+                <span class="font-mono text-emerald-400 font-bold">再生料 18.4% (2031法定目標 16%) ✓</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                <div class="h-full bg-emerald-400 rounded-full" style="width: 18.4%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300">鋰 (Lithium, Li) - 含量 7.8 kg</span>
+                <span class="font-mono text-emerald-400 font-bold">再生料 8.2% (2031法定目標 6%) ✓</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                <div class="h-full bg-cyan-400 rounded-full" style="width: 8.2%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300">鎳 (Nickel, Ni) - 含量 42.5 kg</span>
+                <span class="font-mono text-emerald-400 font-bold">再生料 9.6% (2031法定目標 6%) ✓</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                <div class="h-full bg-indigo-400 rounded-full" style="width: 9.6%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300">鉛 (Lead, Pb) - 輔助啟動單元</span>
+                <span class="font-mono text-emerald-400 font-bold">再生料 92.0% (2031法定目標 85%) ✓</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                <div class="h-full bg-teal-400 rounded-full" style="width: 92%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card-subtle p-3.5 rounded-2xl border border-slate-800 text-xs space-y-1.5">
+          <div class="text-indigo-300 font-bold flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>供應鏈盡職調查與人權溯源 (OECD Due Diligence)</span>
+          </div>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            原料供應商符合 CSDDD 與電池法規第 48 條，鈷礦源自剛果民主共和國 (DRC) 合格認證礦區，經 RCS Global 第三方人權與無童工審計核可；天然石墨已綁定 UNTP 區塊鏈防偽原產地證書。
+          </p>
+        </div>
+      </div>
+
+      <!-- TAB 3: BMS Performance & SOH History -->
+      <div id="tab-content-soh" class="tab-pane hidden overflow-y-auto py-4 space-y-4 pr-1">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="glass-card-subtle p-3 rounded-xl border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400">當前健康狀態 SOH</div>
+            <div id="modal-soh-val" class="text-xl font-black text-emerald-400 font-mono mt-1">94.2%</div>
+          </div>
+          <div class="glass-card-subtle p-3 rounded-xl border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400">剩餘預估壽命 (RUL)</div>
+            <div class="text-xl font-black text-white font-mono mt-1">6.8 年</div>
+          </div>
+          <div class="glass-card-subtle p-3 rounded-xl border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400">等效滿充放循環</div>
+            <div id="modal-cycle-val" class="text-xl font-black text-cyan-300 font-mono mt-1">428 次</div>
+          </div>
+          <div class="glass-card-subtle p-3 rounded-xl border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400">內部累積能量通量</div>
+            <div class="text-xl font-black text-indigo-300 font-mono mt-1">32.6 MWh</div>
+          </div>
+        </div>
+
+        <div class="glass-card-subtle p-4 rounded-2xl border border-slate-800">
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span>動態 BMS 遙測數據上傳驗證日誌 (Telemetry Ledger)</span>
+            <span class="text-[10px] text-emerald-400 font-mono">TLS 1.3 / ISO 15118-20 加密</span>
+          </h4>
+          <div class="space-y-2 text-xs font-mono max-h-40 overflow-y-auto" id="soh-telemetry-log">
+            <div class="p-2 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center text-[11px]">
+              <span class="text-slate-400">2026-11-06 16:40:12</span>
+              <span class="text-emerald-400">SOH: 94.2% | Cycles: 428 | Res: 18.2mΩ</span>
+              <span class="text-cyan-300">✓ 簽署成功</span>
+            </div>
+            <div class="p-2 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center text-[11px]">
+              <span class="text-slate-400">2026-10-28 09:15:30</span>
+              <span class="text-emerald-400">SOH: 94.5% | Cycles: 412 | Res: 18.1mΩ</span>
+              <span class="text-cyan-300">✓ 簽署成功</span>
+            </div>
+            <div class="p-2 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center text-[11px]">
+              <span class="text-slate-400">2026-09-14 14:02:11</span>
+              <span class="text-emerald-400">SOH: 95.1% | Cycles: 395 | Res: 17.9mΩ</span>
+              <span class="text-cyan-300">✓ 簽署成功</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: Circularity & Repair Actions -->
+      <div id="tab-content-circularity" class="tab-pane hidden overflow-y-auto py-4 space-y-3 pr-1">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <!-- Repair Passport Entry -->
+          <div class="glass-card-subtle p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between text-cyan-300 font-bold">
+              <span><i class="fa-solid fa-wrench mr-1"></i>維修與獨立維修商 (Right to Repair)</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300">開放授權</span>
+            </div>
+            <p class="text-[11px] text-slate-400">
+              提供符合法規的電池拆解技術手冊、高壓去能程序 (De-energizing)、以及副廠/獨立維修商可更換零件清單 (模組電芯、BMS 主機板、接觸器)。
+            </p>
+            <button onclick="simulateRepairAction()" class="w-full py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold transition-all">
+              執行模組抽換與維修數位簽章上鏈
+            </button>
+          </div>
+
+          <!-- Second Life & Recycling Entry -->
+          <div class="glass-card-subtle p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between text-emerald-300 font-bold">
+              <span><i class="fa-solid fa-recycle mr-1"></i>梯次利用 / 報廢黑粉回收</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">溯源認證</span>
+            </div>
+            <p class="text-[11px] text-slate-400">
+              當 SOH 低於 80% 時，護照自動解鎖「儲能轉用 (Second-life)」資格憑證；當判定為 EoL 報廢時，將生成黑粉 (Black Mass) 回收委託單。
+            </p>
+            <button onclick="simulateRecycleAction()" class="w-full py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-all">
+              登記報廢回收並結清電池護照
+            </button>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] text-slate-400 flex items-center gap-2">
+          <i class="fa-solid fa-file-signature text-emerald-400 text-base"></i>
+          <span>
+            所有維修紀錄與回收宣告均採用 <strong>W3C Verifiable Credentials (VC)</strong> 與製造商數位私鑰簽章，符合法規抗篡改性與審計追溯要求。
+          </span>
+        </div>
+      </div>
+
+      <!-- Footer Action -->
+      <div class="pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+        <div>GS1 Digital Link: <code class="text-cyan-300">https://dpp.eu-battery.org/01/04710001082500/21/8842</code></div>
+        <button onclick="closeDPPModal()" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all font-semibold">
+          關閉護照檢視
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed top-20 right-5 z-40 transform translate-x-full transition-transform duration-300 ease-out glass-card border border-emerald-400/40 text-emerald-300 px-4 py-3 rounded-2xl flex items-center gap-3 text-xs shadow-xl">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-base"></i>
+    <span id="toast-msg">已成功上傳最新 SOH 遙測憑證至歐盟 DPP 節點！</span>
+  </div>
+
+  <!-- APPLICATION LOGIC -->
+  <script>
+    // ---------------------------------------------------------------------------
+    // 1. GLOBAL STATE & BATTERY SIMULATION DATA
+    // ---------------------------------------------------------------------------
+    const batteryState = {
+      soh: 94.2,
+      cycles: 428,
+      temperature: 26.4,
+      internalResistance: 18.2,
+      currentStage: 'mfg', // 'mfg', 'ops', 'service', 'secondlife', 'recycle'
+      isExploded: false,
+      isUploading: false
+    };
+
+    let scene, camera, renderer, controls;
+    let batteryGroup;
+    let topCoverGroup, bottomTrayGroup, cellModulesGroup, bmsGroup, wiringGroup;
+    let qrPlateMesh;
+    let bmsIndicatorLight;
+
+    // Raycaster for 3D clicks
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(-999, -999);
+
+    // ---------------------------------------------------------------------------
+    // 2. INITIALIZATION
+    // ---------------------------------------------------------------------------
+    window.onload = function() {
+      initThree();
+      buildBatteryPack3D();
+      initEvents();
+      startContinuousBMSClock();
+      animate();
+    };
+
+    function initThree() {
+      const container = document.getElementById('canvas-container');
+
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x030712, 0.0035);
+
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 35, 60);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.3;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.maxDistance = 140;
+      controls.minDistance = 12;
+      controls.maxPolarAngle = Math.PI / 2 + 0.05;
+      controls.target.set(0, 2, 0);
+
+      // Studio Lighting for Industrial Aesthetic
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+      scene.add(ambientLight);
+
+      const mainLight = new THREE.DirectionalLight(0xffffff, 1.8);
+      mainLight.position.set(30, 60, 40);
+      mainLight.castShadow = true;
+      mainLight.shadow.mapSize.width = 2048;
+      mainLight.shadow.mapSize.height = 2048;
+      scene.add(mainLight);
+
+      const rimLight = new THREE.DirectionalLight(0x10b981, 1.2);
+      rimLight.position.set(-30, 20, -30);
+      scene.add(rimLight);
+
+      const cyanFill = new THREE.PointLight(0x06b6d4, 1.5, 80);
+      cyanFill.position.set(0, 15, 25);
+      scene.add(cyanFill);
+
+      // Floor Grid with Cyber-industrial Aesthetic
+      const gridHelper = new THREE.GridHelper(120, 60, 0x10b981, 0x1e293b);
+      gridHelper.position.y = -6.5;
+      scene.add(gridHelper);
+    }
+
+    // ---------------------------------------------------------------------------
+    // 3. 3D EV BATTERY PACK BUILDER (DETAILED INDUSTRIAL MODEL)
+    // ---------------------------------------------------------------------------
+    function buildBatteryPack3D() {
+      batteryGroup = new THREE.Group();
+      scene.add(batteryGroup);
+
+      // 1. BOTTOM TRAY & LIQUID COOLING PLATE
+      bottomTrayGroup = new THREE.Group();
+      const trayGeo = new THREE.BoxGeometry(36, 1.8, 24);
+      const trayMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        metalness: 0.85,
+        roughness: 0.25
+      });
+      const trayMesh = new THREE.Mesh(trayGeo, trayMat);
+      trayMesh.position.y = -1;
+      trayMesh.castShadow = true;
+      trayMesh.receiveShadow = true;
+      bottomTrayGroup.add(trayMesh);
+
+      // Cooling Inlets / Outlets
+      const pipeGeo = new THREE.CylinderGeometry(0.6, 0.6, 2.5, 16);
+      const pipeMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, metalness: 0.9, roughness: 0.2 });
+      const pipe1 = new THREE.Mesh(pipeGeo, pipeMat);
+      pipe1.rotation.z = Math.PI / 2;
+      pipe1.position.set(-18.5, -0.6, 6);
+      bottomTrayGroup.add(pipe1);
+      const pipe2 = pipe1.clone();
+      pipe2.position.set(-18.5, -0.6, -6);
+      bottomTrayGroup.add(pipe2);
+
+      batteryGroup.add(bottomTrayGroup);
+
+      // 2. PRISMATIC CELL MODULES (4 Large Sub-Packs)
+      cellModulesGroup = new THREE.Group();
+      const moduleGeo = new THREE.BoxGeometry(15, 4.2, 9.6);
+      const moduleMat = new THREE.MeshStandardMaterial({
+        color: 0x0f766e,
+        emissive: 0x042f2e,
+        emissiveIntensity: 0.4,
+        metalness: 0.6,
+        roughness: 0.35
+      });
+
+      const positions = [
+        { x: -8, z: -5.5 },
+        { x: 8, z: -5.5 },
+        { x: -8, z: 5.5 },
+        { x: 8, z: 5.5 }
+      ];
+
+      positions.forEach((pos, idx) => {
+        const mod = new THREE.Mesh(moduleGeo, moduleMat);
+        mod.position.set(pos.x, 2.2, pos.z);
+        mod.castShadow = true;
+        mod.receiveShadow = true;
+        mod.userData = { id: `module-${idx + 1}`, type: "cell_module" };
+
+        // Busbars on top of each cell module
+        for (let b = -6; b <= 6; b += 3) {
+          const busGeo = new THREE.BoxGeometry(1.8, 0.4, 0.8);
+          const busMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.9, roughness: 0.1 });
+          const bus = new THREE.Mesh(busGeo, busMat);
+          bus.position.set(b, 2.2, 0);
+          mod.add(bus);
+        }
+
+        cellModulesGroup.add(mod);
+      });
+      batteryGroup.add(cellModulesGroup);
+
+      // 3. BMS (BATTERY MANAGEMENT SYSTEM) & HIGH VOLTAGE RELAYS
+      bmsGroup = new THREE.Group();
+      const bmsGeo = new THREE.BoxGeometry(8, 2.4, 6);
+      const bmsMat = new THREE.MeshStandardMaterial({
+        color: 0x0369a1,
+        metalness: 0.5,
+        roughness: 0.4
+      });
+      const bmsMesh = new THREE.Mesh(bmsGeo, bmsMat);
+      bmsMesh.position.set(0, 5.4, -6);
+      bmsMesh.castShadow = true;
+      bmsGroup.add(bmsMesh);
+
+      // BMS Status Pulsing Indicator LED
+      const ledGeo = new THREE.SphereGeometry(0.35, 16, 16);
+      const ledMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+      bmsIndicatorLight = new THREE.Mesh(ledGeo, ledMat);
+      bmsIndicatorLight.position.set(3, 6.7, -6);
+      bmsGroup.add(bmsIndicatorLight);
+
+      batteryGroup.add(bmsGroup);
+
+      // 4. HIGH VOLTAGE WIRING & INTERCONNECTS (Orange Cabling)
+      wiringGroup = new THREE.Group();
+      const cableMat = new THREE.MeshStandardMaterial({
+        color: 0xf97316,
+        roughness: 0.5,
+        metalness: 0.2
+      });
+
+      const cableCurve1 = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-12, 4.4, -5),
+        new THREE.Vector3(-6, 5.8, -6),
+        new THREE.Vector3(0, 5.5, -6),
+        new THREE.Vector3(6, 5.8, -6),
+        new THREE.Vector3(12, 4.4, -5)
+      ]);
+      const cableGeo1 = new THREE.TubeGeometry(cableCurve1, 32, 0.35, 8, false);
+      const cableMesh1 = new THREE.Mesh(cableGeo1, cableMat);
+      wiringGroup.add(cableMesh1);
+
+      batteryGroup.add(wiringGroup);
+
+      // 5. TOP PROTECTIVE COVER WITH EMBEDDED DPP QR CODE PLATE
+      topCoverGroup = new THREE.Group();
+      const coverGeo = new THREE.BoxGeometry(36.2, 1.2, 24.2);
+      const coverMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        metalness: 0.7,
+        roughness: 0.3,
+        transparent: true,
+        opacity: 0.88
+      });
+      const coverMesh = new THREE.Mesh(coverGeo, coverMat);
+      coverMesh.position.y = 7.5;
+      coverMesh.castShadow = true;
+      coverMesh.receiveShadow = true;
+      topCoverGroup.add(coverMesh);
+
+      // Physical QR Code Plate on top cover
+      const plateGeo = new THREE.BoxGeometry(7, 0.1, 7);
+      const plateMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.1,
+        metalness: 0.05
+      });
+      qrPlateMesh = new THREE.Mesh(plateGeo, plateMat);
+      qrPlateMesh.position.set(10, 8.15, 5);
+      qrPlateMesh.userData = { isQRPlate: true };
+      topCoverGroup.add(qrPlateMesh);
+
+      // Inner Procedural QR Pattern on Plate
+      const qrInnerGeo = new THREE.PlaneGeometry(5.8, 5.8);
+      const qrCanvas = createProceduralQRCanvas();
+      const qrTex = new THREE.CanvasTexture(qrCanvas);
+      const qrInnerMat = new THREE.MeshBasicMaterial({ map: qrTex, transparent: true });
+      const qrPlane = new THREE.Mesh(qrInnerGeo, qrInnerMat);
+      qrPlane.rotation.x = -Math.PI / 2;
+      qrPlane.position.y = 0.06;
+      qrPlateMesh.add(qrPlane);
+
+      // Neon Pointer Ring around QR Plate
+      const ringGeo = new THREE.RingGeometry(4.2, 4.6, 32);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x10b981,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.8
+      });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.rotation.x = -Math.PI / 2;
+      ringMesh.position.y = 0.07;
+      qrPlateMesh.add(ringMesh);
+
+      batteryGroup.add(topCoverGroup);
+    }
+
+    function createProceduralQRCanvas() {
+      const cvs = document.createElement('canvas');
+      cvs.width = 256;
+      cvs.height = 256;
+      const ctx = cvs.getContext('2d');
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 256, 256);
+
+      ctx.fillStyle = '#0f172a';
+      // Outer Finder 1
+      ctx.fillRect(20, 20, 60, 60);
+      ctx.clearRect(30, 30, 40, 40);
+      ctx.fillRect(40, 40, 20, 20);
+
+      // Outer Finder 2
+      ctx.fillRect(176, 20, 60, 60);
+      ctx.clearRect(186, 30, 40, 40);
+      ctx.fillRect(196, 40, 20, 20);
+
+      // Outer Finder 3
+      ctx.fillRect(20, 176, 60, 60);
+      ctx.clearRect(30, 186, 40, 40);
+      ctx.fillRect(40, 196, 20, 20);
+
+      // Pseudo random data pixels
+      for (let x = 20; x < 236; x += 12) {
+        for (let y = 20; y < 236; y += 12) {
+          if ((x < 90 && y < 90) || (x > 160 && y < 90) || (x < 90 && y > 160)) continue;
+          if (Math.random() > 0.45) {
+            ctx.fillStyle = Math.random() > 0.8 ? '#10b981' : '#0f172a';
+            ctx.fillRect(x, y, 10, 10);
+          }
+        }
+      }
+
+      // Add text label
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 16px Inter, sans-serif';
+      ctx.fillText('EU BATTERY DPP', 60, 250);
+
+      return cvs;
+    }
+
+    // ---------------------------------------------------------------------------
+    // 4. 3D EXPLODED VIEW (GSAP ANIMATION)
+    // ---------------------------------------------------------------------------
+    function toggleExplodedView() {
+      batteryState.isExploded = !batteryState.isExploded;
+
+      const btn = document.getElementById('exploded-btn');
+      const text = document.getElementById('exploded-text');
+      const icon = document.getElementById('exploded-icon');
+
+      if (batteryState.isExploded) {
+        text.textContent = "還原緊湊結構";
+        icon.className = "fa-solid fa-compress";
+        btn.classList.add('bg-cyan-500/20', 'border-cyan-400');
+
+        // Explode outward along Y and Z axes
+        gsap.to(topCoverGroup.position, { y: 14, duration: 1.2, ease: "power2.out" });
+        gsap.to(bmsGroup.position, { y: 10, z: -10, duration: 1.2, ease: "power2.out" });
+        gsap.to(wiringGroup.position, { y: 8, duration: 1.2, ease: "power2.out" });
+
+        // Spread out cell modules
+        cellModulesGroup.children.forEach((mod, idx) => {
+          const spreadX = (idx % 2 === 0 ? -1 : 1) * 3;
+          const spreadZ = (idx < 2 ? -1 : 1) * 3;
+          gsap.to(mod.position, {
+            x: mod.position.x + spreadX,
+            z: mod.position.z + spreadZ,
+            duration: 1.2,
+            ease: "power2.out"
+          });
+        });
+
+        gsap.to(bottomTrayGroup.position, { y: -5, duration: 1.2, ease: "power2.out" });
+      } else {
+        text.textContent = "結構拆解透視";
+        icon.className = "fa-solid fa-boxes-stacked";
+        btn.classList.remove('bg-cyan-500/20', 'border-cyan-400');
+
+        // Restore original assembly positions
+        gsap.to(topCoverGroup.position, { y: 0, duration: 1.0, ease: "power2.inOut" });
+        gsap.to(bmsGroup.position, { y: 0, z: 0, duration: 1.0, ease: "power2.inOut" });
+        gsap.to(wiringGroup.position, { y: 0, duration: 1.0, ease: "power2.inOut" });
+
+        const originalPositions = [
+          { x: -8, z: -5.5 },
+          { x: 8, z: -5.5 },
+          { x: -8, z: 5.5 },
+          { x: 8, z: 5.5 }
+        ];
+
+        cellModulesGroup.children.forEach((mod, idx) => {
+          gsap.to(mod.position, {
+            x: originalPositions[idx].x,
+            z: originalPositions[idx].z,
+            duration: 1.0,
+            ease: "power2.inOut"
+          });
+        });
+
+        gsap.to(bottomTrayGroup.position, { y: 0, duration: 1.0, ease: "power2.inOut" });
+      }
+    }
+
+    // ---------------------------------------------------------------------------
+    // 5. LIFECYCLE STAGE SWITCHING (DPP REAL SCENARIOS)
+    // ---------------------------------------------------------------------------
+    function setLifecycleStage(stage) {
+      batteryState.currentStage = stage;
+
+      // Update button classes
+      const stages = ['mfg', 'ops', 'service', 'secondlife', 'recycle'];
+      stages.forEach(s => {
+        const btn = document.getElementById(`stage-${s}-btn`);
+        if (s === stage) {
+          btn.className = "px-3 py-1.5 rounded-xl font-bold bg-emerald-500 text-slate-950 transition-all flex items-center gap-1.5";
+        } else {
+          btn.className = "px-3 py-1.5 rounded-xl font-medium text-slate-300 hover:text-white transition-all flex items-center gap-1.5";
+        }
+      });
+
+      // Update parameters corresponding to real EV battery lifecycle degradation
+      if (stage === 'mfg') {
+        batteryState.soh = 100.0;
+        batteryState.cycles = 0;
+        batteryState.internalResistance = 16.5;
+        showToast("切換至【製造出廠階段】：生成原始 DPP 數位護照與初次碳足跡宣告");
+      } else if (stage === 'ops') {
+        batteryState.soh = 94.2;
+        batteryState.cycles = 428;
+        batteryState.internalResistance = 18.2;
+        showToast("切換至【在役運作階段】：車載 BMS 定期同步 SOH 遙測憑證至護照節點");
+      } else if (stage === 'service') {
+        batteryState.soh = 89.5;
+        batteryState.cycles = 780;
+        batteryState.internalResistance = 21.0;
+        showToast("切換至【維修保養階段】：解鎖獨立維修商維修手冊與更換模組憑證");
+      } else if (stage === 'secondlife') {
+        batteryState.soh = 78.4;
+        batteryState.cycles = 1450;
+        batteryState.internalResistance = 26.8;
+        showToast("切換至【梯次利用階段】：SOH 低於 80%，移轉為儲能系統 (BESS) 登記護照");
+      } else if (stage === 'recycle') {
+        batteryState.soh = 64.0;
+        batteryState.cycles = 2300;
+        batteryState.internalResistance = 38.5;
+        showToast("切換至【報廢回收階段】：啟動黑粉提取、貴金屬回收率審計與護照結案");
+      }
+
+      updateTelemetryUI();
+    }
+
+    function updateTelemetryUI() {
+      document.getElementById('soh-value-display').textContent = `${batteryState.soh.toFixed(1)}%`;
+      document.getElementById('modal-soh-val').textContent = `${batteryState.soh.toFixed(1)}%`;
+      document.getElementById('cycle-count-display').textContent = `${batteryState.cycles} 次`;
+      document.getElementById('modal-cycle-val').textContent = `${batteryState.cycles} 次`;
+      document.getElementById('temp-res-display').textContent = `${batteryState.temperature.toFixed(1)}°C / ${batteryState.internalResistance.toFixed(1)} mΩ`;
+
+      const progressBar = document.getElementById('soh-progress-bar');
+      progressBar.style.width = `${Math.min(100, Math.max(0, batteryState.soh))}%`;
+
+      const badge = document.getElementById('soh-status-badge');
+      if (batteryState.soh >= 90) {
+        badge.textContent = "優良 (一級狀態)";
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-medium";
+      } else if (batteryState.soh >= 80) {
+        badge.textContent = "正常車載運行";
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 font-medium";
+      } else if (batteryState.soh >= 70) {
+        badge.textContent = "建議移轉梯次利用 (BESS)";
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 font-medium";
+      } else {
+        badge.textContent = "達報廢回收標準 (EoL)";
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-400/30 font-medium";
+      }
+    }
+
+    // ---------------------------------------------------------------------------
+    // 6. BMS SOH DYNAMIC UPLOAD SIMULATION
+    // ---------------------------------------------------------------------------
+    function triggerManualSOHUpload() {
+      if (batteryState.isUploading) return;
+      batteryState.isUploading = true;
+
+      const btn = document.getElementById('upload-soh-btn');
+      const icon = document.getElementById('upload-icon');
+      btn.classList.add('animate-pulse', 'border-emerald-400', 'text-emerald-300');
+      icon.className = "fa-solid fa-spinner fa-spin";
+
+      // Slight BMS LED blink
+      if (bmsIndicatorLight) {
+        bmsIndicatorLight.material.color.setHex(0x38bdf8);
+      }
+
+      setTimeout(() => {
+        // Compute UTC now
+        const now = new Date();
+        const dateStr = now.toISOString().replace('T', ' ').substring(0, 19) + " UTC";
+        document.getElementById('sync-timestamp').textContent = dateStr;
+
+        // Append to modal log
+        const logContainer = document.getElementById('soh-telemetry-log');
+        const newEntry = document.createElement('div');
+        newEntry.className = "p-2 rounded bg-slate-900/80 border border-emerald-500/40 flex justify-between items-center text-[11px] animate-pulse";
+        newEntry.innerHTML = `
+          <span class="text-slate-400">${dateStr}</span>
+          <span class="text-emerald-400 font-bold">SOH: ${batteryState.soh.toFixed(1)}% | Cycles: ${batteryState.cycles} | Res: ${batteryState.internalResistance.toFixed(1)}mΩ</span>
+          <span class="text-cyan-300 font-semibold">✓ 密碼簽章上鏈</span>
+        `;
+        logContainer.prepend(newEntry);
+
+        btn.classList.remove('animate-pulse', 'border-emerald-400', 'text-emerald-300');
+        icon.className = "fa-solid fa-cloud-arrow-up";
+        if (bmsIndicatorLight) {
+          bmsIndicatorLight.material.color.setHex(0x10b981);
+        }
+        batteryState.isUploading = false;
+
+        showToast(`動態上傳成功！SOH ${batteryState.soh.toFixed(1)}% 憑證已同步至 DPP`);
+      }, 1200);
+    }
+
+    function startContinuousBMSClock() {
+      // Simulate minor temperature and sensor jitter
+      setInterval(() => {
+        batteryState.temperature = 26.0 + (Math.random() - 0.5) * 1.2;
+        updateTelemetryUI();
+      }, 3000);
+    }
+
+    // ---------------------------------------------------------------------------
+    // 7. QR CODE SCANNING & MODAL INTERACTIONS
+    // ---------------------------------------------------------------------------
+    function simulateScanQRCode() {
+      // Camera smoothly zooms in onto QR plate, then opens modal
+      const targetPos = new THREE.Vector3(10, 8.15, 5);
+      
+      gsap.to(camera.position, {
+        x: targetPos.x + 8,
+        y: targetPos.y + 12,
+        z: targetPos.z + 12,
+        duration: 1.2,
+        ease: "power2.out",
+        onUpdate: () => controls.update(),
+        onComplete: () => {
+          openDPPModal();
+        }
+      });
+      controls.target.copy(targetPos);
+    }
+
+    function openDPPModal() {
+      document.getElementById('dpp-modal').classList.remove('hidden');
+    }
+
+    function closeDPPModal() {
+      document.getElementById('dpp-modal').classList.add('hidden');
+    }
+
+    function switchDPPTab(tabId) {
+      const tabs = ['general', 'materials', 'soh', 'circularity'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const content = document.getElementById(`tab-content-${t}`);
+        if (t === tabId) {
+          btn.className = "px-3.5 py-1.5 rounded-xl font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
+          content.classList.remove('hidden');
+        } else {
+          btn.className = "px-3.5 py-1.5 rounded-xl font-medium text-slate-400 hover:text-white";
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    function simulateRepairAction() {
+      closeDPPModal();
+      setLifecycleStage('service');
+      showToast("已登錄【模組更換維修紀錄】：更新電芯序號與獨立維修商私鑰憑證");
+    }
+
+    function simulateRecycleAction() {
+      closeDPPModal();
+      setLifecycleStage('recycle');
+      showToast("已啟動【報廢回收流程】：生成黑粉萃取批號，並終結該 Pack 護照在役狀態");
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      toast.classList.remove('translate-x-full');
+      setTimeout(() => {
+        toast.classList.add('translate-x-full');
+      }, 4000);
+    }
+
+    function resetCamera() {
+      gsap.to(camera.position, {
+        x: 0,
+        y: 35,
+        z: 60,
+        duration: 1.5,
+        ease: "power2.inOut",
+        onUpdate: () => controls.update()
+      });
+      controls.target.set(0, 2, 0);
+    }
+
+    // ---------------------------------------------------------------------------
+    // 8. 3D RAYCASTING & EVENTS
+    // ---------------------------------------------------------------------------
+    function initEvents() {
+      window.addEventListener('resize', onWindowResize, false);
+      window.addEventListener('click', onCanvasClick, false);
+      window.addEventListener('mousemove', onCanvasMouseMove, false);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function onCanvasMouseMove(e) {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      if (!qrPlateMesh) return;
+
+      const intersects = raycaster.intersectObjects([qrPlateMesh], true);
+      if (intersects.length > 0) {
+        document.body.style.cursor = 'pointer';
+      } else {
+        document.body.style.cursor = 'default';
+      }
+    }
+
+    function onCanvasClick(e) {
+      // Ignore clicks on UI elements
+      if (e.target.closest('.pointer-events-auto') || e.target.closest('#dpp-modal')) {
+        return;
+      }
+
+      raycaster.setFromCamera(mouse, camera);
+      const objectsToTest = [qrPlateMesh, bmsGroup, cellModulesGroup].filter(Boolean);
+      const intersects = raycaster.intersectObjects(objectsToTest, true);
+
+      if (intersects.length > 0) {
+        let hit = intersects[0].object;
+        // Check if QR plate was clicked
+        if (hit === qrPlateMesh || hit.parent === qrPlateMesh || hit.userData.isQRPlate) {
+          simulateScanQRCode();
+          return;
+        }
+
+        // Check if BMS was clicked
+        if (hit.parent === bmsGroup || hit === bmsGroup) {
+          switchDPPTab('soh');
+          openDPPModal();
+          return;
+        }
+
+        // Check if Cell Module was clicked
+        switchDPPTab('materials');
+        openDPPModal();
+      }
+    }
+
+    // ---------------------------------------------------------------------------
+    // 9. ANIMATION LOOP
+    // ---------------------------------------------------------------------------
+    let clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const elapsedTime = clock.getElapsedTime();
+
+      // Slow elegant rotation of battery pack when not interacting
+      if (!controls.state || controls.state === -1) {
+        batteryGroup.rotation.y = Math.sin(elapsedTime * 0.15) * 0.08;
+      }
+
+      // Pulsing BMS LED
+      if (bmsIndicatorLight) {
+        const pulse = (Math.sin(elapsedTime * 4) + 1) * 0.5;
+        bmsIndicatorLight.scale.setScalar(0.8 + pulse * 0.4);
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+  </script>
+</body>
+</html>
