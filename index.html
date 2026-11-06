@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>歐盟 DPP 太空法規生態系 3D 視覺化</title>
+  <title>歐盟產品數位護照 (DPP) 太空法規生態系 3D 視覺化</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -112,9 +112,9 @@
               <h1 class="text-lg sm:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-sky-400 font-orbitron">
                 EU DPP COSMOS
               </h1>
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 font-mono">v3.5.0</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 font-mono">v3.6.0</span>
             </div>
-            <p class="text-xs text-slate-400 font-medium">歐盟數位產品護照與永續法規太空生態系</p>
+            <p class="text-xs text-slate-400 font-medium">歐盟產品數位護照與永續法規太空生態系</p>
           </div>
         </div>
 
@@ -127,17 +127,18 @@
 
       <!-- Controls & Quick Navigation -->
       <div class="flex flex-wrap items-center gap-2">
-        <!-- Sector Filter Dropdown (Moved from center to header) -->
+        <!-- Sector Filter Dropdown -->
         <div class="glass-panel px-3 py-1.5 rounded-2xl flex items-center gap-2 text-xs">
           <i class="fa-solid fa-filter text-cyan-400"></i>
-          <span class="text-slate-400 text-[11px] hidden sm:inline">產業:</span>
+          <span class="text-slate-400 text-[11px] hidden sm:inline">產品類別:</span>
           <select id="sector-select" onchange="filterSector(this.value)" class="bg-transparent text-cyan-300 font-semibold focus:outline-none cursor-pointer pr-1 text-xs">
-            <option value="all" class="bg-slate-900 text-slate-100">全部法規</option>
-            <option value="battery" class="bg-slate-900 text-slate-100">動力電池與EV</option>
-            <option value="textile" class="bg-slate-900 text-slate-100">紡織成衣</option>
-            <option value="ict" class="bg-slate-900 text-slate-100">電子與資通訊</option>
-            <option value="steel" class="bg-slate-900 text-slate-100">鋼鐵與金屬</option>
-            <option value="packaging" class="bg-slate-900 text-slate-100">包裝與民生</option>
+            <option value="all" class="bg-slate-900 text-slate-100">全部法規與標準 (全覽)</option>
+            <option value="battery" class="bg-slate-900 text-slate-100">動力與工業電池 (EV/BESS)</option>
+            <option value="textile" class="bg-slate-900 text-slate-100">紡織成衣與鞋類</option>
+            <option value="ict" class="bg-slate-900 text-slate-100">電子資通訊與家電</option>
+            <option value="steel" class="bg-slate-900 text-slate-100">鋼鐵、金屬與關鍵原物料</option>
+            <option value="packaging" class="bg-slate-900 text-slate-100">包裝與容器廢棄物</option>
+            <option value="consumer" class="bg-slate-900 text-slate-100">終端消費品與反漂綠宣稱</option>
           </select>
         </div>
 
@@ -205,7 +206,7 @@
 
         <div class="text-right hidden sm:block">
           <div class="text-[10px] text-slate-400">當前生效/運行中法規</div>
-          <div id="active-laws-counter" class="text-base font-bold text-cyan-300 font-mono">6 / 11 運作中</div>
+          <div id="active-laws-counter" class="text-base font-bold text-cyan-300 font-mono">6 / 13 運作中</div>
         </div>
       </div>
 
@@ -217,9 +218,9 @@
         <div class="flex justify-between text-[10px] text-slate-400 font-mono pt-1 px-1">
           <span onclick="seekTimelineByYearMonth(2019, 12)" class="cursor-pointer hover:text-cyan-300">2019.12<br/><span class="text-[8px] text-slate-500">Green Deal</span></span>
           <span onclick="seekTimelineByYearMonth(2020, 3)" class="cursor-pointer hover:text-cyan-300">2020.03<br/><span class="text-[8px] text-slate-500">CEAP出爐</span></span>
-          <span onclick="seekTimelineByYearMonth(2022, 3)" class="cursor-pointer hover:text-cyan-300">2022.03<br/><span class="text-[8px] text-slate-500">ESPR草案</span></span>
+          <span onclick="seekTimelineByYearMonth(2022, 3)" class="cursor-pointer hover:text-cyan-300">2022.03<br/><span class="text-[8px] text-slate-500">ESPR/EmpCo</span></span>
           <span onclick="seekTimelineByYearMonth(2024, 7)" class="cursor-pointer hover:text-cyan-300 font-bold text-cyan-400">2024.07<br/><span class="text-[8px] text-cyan-400">ESPR生效</span></span>
-          <span onclick="seekTimelineByYearMonth(2026, 1)" class="cursor-pointer hover:text-cyan-300">2026.01<br/><span class="text-[8px] text-slate-500">CBAM收費</span></span>
+          <span onclick="seekTimelineByYearMonth(2026, 9)" class="cursor-pointer hover:text-cyan-300">2026.09<br/><span class="text-[8px] text-slate-500">EmpCo全面適用</span></span>
           <span onclick="seekTimelineByYearMonth(2027, 2)" class="cursor-pointer hover:text-cyan-300">2027.02<br/><span class="text-[8px] text-slate-500">電池護照</span></span>
           <span onclick="seekTimelineByYearMonth(2030, 1)" class="cursor-pointer hover:text-cyan-300">2030.01<br/><span class="text-[8px] text-slate-500">全產業互聯</span></span>
         </div>
@@ -277,9 +278,18 @@
     <div class="mt-3">
       <div class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
         <i class="fa-solid fa-fingerprint"></i>
-        <span>在數位產品護照 (DPP) 生態之定位</span>
+        <span>在產品數位護照 (DPP) 生態之定位</span>
       </div>
       <p id="drawer-dpp-role" class="text-xs text-slate-300 leading-relaxed p-3 rounded-xl bg-slate-900/70 border border-slate-800"></p>
+    </div>
+
+    <!-- Applicable Product Sectors Badge List -->
+    <div class="mt-3">
+      <div class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span>適用產品類別與受衝擊產業</span>
+      </div>
+      <div id="drawer-applicable-sectors" class="flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-slate-900/70 border border-slate-800"></div>
     </div>
 
     <!-- Key Requirements -->
@@ -370,7 +380,8 @@
         category: "頂層政策核心 (Strategic Sun)",
         officialUrl: "https://environment.ec.europa.eu/strategy/circular-economy-action-plan_en",
         eurlexUrl: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:52020DC0098",
-        dppRole: "全歐盟數位產品護照的戰略母體起點，由 Green Deal 奠定方向、CEAP 確立產品數位身分。",
+        dppRole: "全歐盟產品數位護照的戰略母體起點，由 Green Deal 奠定方向、CEAP 確立產品數位身分。",
+        sectors: ["跨產業全領域", "電子與資通訊", "電池與車輛", "包裝與塑膠", "紡織成衣", "建築營造", "化學與鋼鐵"],
         requirements: [
           "2019 年 12 月 綠色政綱啟動：宣告 2050 氣候中和與資源脫鉤目標",
           "2020 年 03 月 CEAP 確立：賦予消費者綠色知情權與維修權利",
@@ -401,7 +412,8 @@
           layer: 2,
           officialUrl: "https://commission.europa.eu/energy-climate-change-environment/standards-tools-and-labels/products-labelling-rules-and-requirements/sustainable-products/ecodesign-sustainable-products-regulation_en",
           eurlexUrl: "https://eur-lex.europa.eu/eli/reg/2024/1781/oj",
-          dppRole: "★ DPP 核心法律母法！確立數位產品護照由製造商強制登錄，包含二維條碼/RFID載體規格與集中式註冊目錄 (DPP Registry)。",
+          dppRole: "★ DPP 核心法律母法！確立產品數位護照由製造商強制登錄，包含二維條碼/RFID載體規格與集中式註冊目錄 (DPP Registry)。",
+          sectors: ["鋼鐵鋁金屬", "紡織與成衣", "家具與床墊", "輪胎", "清潔劑與化學品", "資通訊硬體", "能源相關產品"],
           requirements: [
             "產品耐用性、可再利用性、可升級性與可維修性強制門檻",
             "強制賦予產品專屬唯一識別碼 (UPI) 與 DPP 資料載體",
@@ -433,7 +445,8 @@
           layer: 2,
           officialUrl: "https://environment.ec.europa.eu/topics/waste-and-recycling/batteries_en",
           eurlexUrl: "https://eur-lex.europa.eu/eli/reg/2023/1542/oj",
-          dppRole: "全球首個進入強制實施的 DPP 先驅垂直品類！2027 年 02 月起，2kWh 以上之工業與動力電池需具備電池護照。",
+          dppRole: "全球首個進入強制實施的產品數位護照先驅品類！2027 年 02 月起，2kWh 以上之工業與動力電池需具備電池護照。",
+          sectors: ["電動車動力電池 (EV)", "儲能系統 (BESS)", "輕型交通工具 (LMT)", "2kWh以上工業電池", "可攜式啟動電池"],
           requirements: [
             "全生命週期碳足跡宣告與性能分級標籤",
             "揭露再生鈷 (16%)、鉛 (85%)、鋰 (6%)、鎳 (6%) 最低強制回收料含量",
@@ -464,7 +477,8 @@
           layer: 2,
           officialUrl: "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
           eurlexUrl: "https://eur-lex.europa.eu/eli/reg/2023/956/oj",
-          dppRole: "進口至歐盟的鋼鐵、鋁、水泥、化肥、電力與氫，其 DPP 需記載產品嵌入之直接與間接碳排放數據。",
+          dppRole: "進口至歐盟的鋼鐵、鋁、水泥、化肥、電力與氫，其產品數位護照需記載嵌入之直接與間接碳排放數據。",
+          sectors: ["鋼鐵冶煉及下游螺絲扣件", "鋁金屬製品", "水泥與熟料", "化肥製造", "電力", "氫能"],
           requirements: [
             "2023-2025 過渡期申報進口商品特定隱含碳排放 (Specific Embedded Emissions)",
             "2026 年起正式要求進口商購買等額 CBAM 碳憑證抵換",
@@ -494,7 +508,8 @@
           layer: 2,
           officialUrl: "https://green-forum.ec.europa.eu/eudr-observatory_en",
           eurlexUrl: "https://eur-lex.europa.eu/eli/reg/2023/1115/oj",
-          dppRole: "針對牛隻、可可、咖啡、油棕、橡膠、大豆與木材，DPP 資料鏈需綁定生產地塊的精確 GPS 多邊形地理座標。",
+          dppRole: "針對牛隻、可可、咖啡、油棕、橡膠、大豆與木材，產品數位護照資料鏈需綁定生產地塊的精確 GPS 多邊形地理座標。",
+          sectors: ["天然橡膠與輪胎", "木材、紙漿與紙質包裝", "牛皮皮革與紡織", "棕櫚油衍生物", "咖啡與可可", "大豆"],
           requirements: [
             "確保 2020 年 12 月 31 日後無森林砍伐與退化事實",
             "取得每批貨物原料出產地塊經緯度 GPS 點位或多邊形坐標",
@@ -524,11 +539,77 @@
           layer: 2,
           officialUrl: "https://commission.europa.eu/business-economy-euro/doing-business-eu/sustainability-due-diligence-responsible-business_en",
           eurlexUrl: "https://eur-lex.europa.eu/eli/dir/2024/1760/oj",
-          dppRole: "由下而上聚合各產品 DPP 的人權、勞動條件與環境足跡資料，轉化為企業層級的 CSRD 永續確信揭露報告。",
+          dppRole: "由下而上聚合各產品數位護照的人權、勞動條件與環境足跡資料，轉化為企業層級的 CSRD 永續確信揭露報告。",
+          sectors: ["跨國大型供應鏈企業", "跨品類代工製造業", "原物料採購端", "零售與品牌商"],
           requirements: [
             "識別、預防並消除供應鏈上下游對人權與環境之負面衝擊",
             "制定符合《巴黎協定》1.5°C 溫室氣體減量氣候轉型計畫",
             "董事會需承擔永續監督責任並納入薪酬獎酬連動機制"
+          ]
+        },
+        {
+          id: "empco",
+          code: "Directive (EU) 2024/825",
+          name: "賦予消費者綠色轉型權利指令 (EmpCo / ECGT)",
+          enName: "Empowering Consumers for the Green Transition Directive",
+          proposalYear: 2022,
+          proposalMonth: 3,
+          proposalIndex: ymToIndex(2022, 3),
+          effectiveYear: 2024,
+          effectiveMonth: 3,
+          effectiveIndex: ymToIndex(2024, 3),
+          proposalDateStr: "2022 年 03 月 (COM(2022) 143 草案)",
+          effectiveDateStr: "2024 年 03 月生效 (2026 年 09 月全面適用)",
+          distance: 148,
+          speed: 0.0026,
+          size: 5.3,
+          color: 0x06b6d4,
+          leadDG: "DG JUST (司法與消費者總署)",
+          dgRole: "修訂《不公平商業行為指令》(UCPD) 與《消費者權利指令》(CRD)，全面黑名單化漂綠與過早報廢行為。",
+          cluster: "esg_reporting",
+          layer: 2,
+          officialUrl: "https://commission.europa.eu/topics/consumers/consumer-rights-and-complaints/sustainable-consumption_en",
+          eurlexUrl: "https://eur-lex.europa.eu/eli/dir/2024/825/oj",
+          dppRole: "★ 消費端反漂綠前線！強制要求商品向消費者揭露調和耐用性保固標籤與維修指數，禁止無公信力標籤，所有宣稱可由產品數位護照 QR 碼現場驗證。",
+          sectors: ["終端消費電子", "成衣服飾與鞋靴", "家用電器", "包裝民生消費品 (FMCG)", "汽機車配備"],
+          requirements: [
+            "黑名單禁令：全面禁止未具備公認卓越環境效益的泛稱性環境宣稱（如「Green」、「Eco-friendly」）",
+            "碳抵換禁令：嚴格禁止基於境外溫室氣體抵換（Offsetting）而宣稱產品為「碳中和 (Carbon Neutral)」、「氣候中立」",
+            "禁止未經官方或具公信力第三方認證計畫支持的私設永續認證標籤",
+            "禁止隱瞞軟體更新對硬體之負面影響或刻意誘使消費者提前更換耗材（打擊計畫性報廢）",
+            "銷售點強制提供歐盟統一調和之商業耐用性保固標籤 (Durability Guarantee Label) 與維修評分"
+          ]
+        },
+        {
+          id: "greenclaims",
+          code: "COM(2023) 166 (Green Claims Directive)",
+          name: "綠色聲明指令 (防漂綠科學查證)",
+          enName: "Green Claims Directive (GCD)",
+          proposalYear: 2023,
+          proposalMonth: 3,
+          proposalIndex: ymToIndex(2023, 3),
+          effectiveYear: 2026,
+          effectiveMonth: 3,
+          effectiveIndex: ymToIndex(2026, 3),
+          proposalDateStr: "2023 年 03 月 (執委會草案提出)",
+          effectiveDateStr: "2026 年 03 月 (預計全面適用生效)",
+          distance: 156,
+          speed: 0.0024,
+          size: 5.0,
+          color: 0x14b8a6,
+          leadDG: "DG ENV (環境總署) + DG JUST (司法與消費者總署)",
+          dgRole: "打擊企業誇大或無實據的環境聲明（漂綠 Greenwashing），強制實施獨立第三方事前查證與 PEF 方法學認證。",
+          cluster: "esg_reporting",
+          layer: 2,
+          officialUrl: "https://environment.ec.europa.eu/topics/circular-economy/green-claims_en",
+          eurlexUrl: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A52023PC0166",
+          dppRole: "★ 產品數位護照的反漂綠信任錨！企業在宣稱碳中和、零塑或循環度時，必須以產品數位護照記載的生命週期科學數據（PEF）作為法規抗辯依據。",
+          sectors: ["快消品與食品包裝", "運動休閒成衣", "美妝保養清潔品", "節能電子產品", "循環再生塑料商品"],
+          requirements: [
+            "環境聲明必須基於科學實證與生命週期評估 (LCA / PEF)",
+            "禁止使用未經認證的模糊標籤（如：Eco-friendly、Green、Carbon Neutral）",
+            "聲明公開前須取得合格獨立第三方驗證機構的事前合規證書 (Certificate of Conformity)",
+            "透過產品數位護照 QR Code 提供消費者完整的佐證科學文件與測試報告連結"
           ]
         },
         {
@@ -554,7 +635,8 @@
           layer: 2,
           officialUrl: "https://echa.europa.eu/regulations/reach/understanding-reach",
           eurlexUrl: "https://eur-lex.europa.eu/eli/reg/2006/1907/oj",
-          dppRole: "DPP 必須揭露產品內所有濃度超過 0.1% (w/w) 之關注物質 (Substances of Concern, SoC) 與安全處置拆解指引。",
+          dppRole: "產品數位護照必須揭露產品內所有濃度超過 0.1% (w/w) 之關注物質 (Substances of Concern, SoC) 與安全處置拆解指引。",
+          sectors: ["電子半導體封裝", "紡織染料與助劑", "包裝與食品接觸材料", "聚合物與塑膠添加劑", "電池電解液"],
           requirements: [
             "強制作成 REACH SVHC 高度關注物質宣告",
             "連結 SCIP 廢棄物與再利用化學安全評估",
@@ -584,7 +666,8 @@
           layer: 2,
           officialUrl: "https://commission.europa.eu/law/law-topic/consumer-protection-law/consumer-contract-law/rules-repair-goods_en",
           eurlexUrl: "https://eur-lex.europa.eu/eli/dir/2024/1799/oj",
-          dppRole: "消費者掃描 DPP QR Code 即可直接取得官方維修手冊、零件爆炸圖與向原廠/獨立維修商訂購備品的管道。",
+          dppRole: "消費者掃描產品數位護照 QR Code 即可直接取得官方維修手冊、零件爆炸圖與向原廠/獨立維修商訂購備品的管道。",
+          sectors: ["智慧型手機與平板電腦", "筆記型電腦", "洗衣機與洗碗機", "電冰箱", "吸塵器", "焊接設備"],
           requirements: [
             "法定保固期內若選擇維修，保固期限自動延長 12 個月",
             "製造商須在 5-10 年內以合理價格供應關鍵零組件與維修工具",
@@ -615,6 +698,7 @@
           officialUrl: "https://environment.ec.europa.eu/topics/waste-and-recycling/packaging-waste_en",
           eurlexUrl: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A52022PC0677",
           dppRole: "賦予包裝統一調和化 QR 碼，記錄包裝材料類別、回收等級（A/B/C級）與消費後再生塑膠 (PCR) 含量認證。",
+          sectors: ["食品與飲料包裝容器", "電商物流運輸外箱", "化妝品瓶罐", "工業散裝包裝 (IBC)", "生鮮托盤"],
           requirements: [
             "2030 年所有進入歐盟市場之包裝必須 100% 具備可回收性",
             "塑膠包裝強制導入 PCR 最低含量比例要求 (30%~65%)",
@@ -645,7 +729,8 @@
           layer: 1,
           officialUrl: "https://single-market-economy.ec.europa.eu/sectors/raw-materials/areas-specific-interest/critical-raw-materials/critical-raw-materials-act_en",
           eurlexUrl: "https://eur-lex.europa.eu/eli/reg/2024/1252/oj",
-          dppRole: "針對電動馬達、風機與消費電子中的釹鐵硼永久磁鐵，DPP 需記載稀土成分比例與再生料來源證明。",
+          dppRole: "針對電動馬達、風機與消費電子中的釹鐵硼永久磁鐵，產品數位護照需記載稀土成分比例與再生料來源證明。",
+          sectors: ["稀土永久磁鐵 (釹鐵硼 NdFeB)", "電動車牽引馬達", "離岸風力發電機", "機器人伺服馬達", "消費性硬碟與揚聲器"],
           requirements: [
             "2030 境內自給指標：歐盟消耗量至少 10% 本土開採、40% 本地加工、25% 來自回收料",
             "單一第三國單一關鍵原物料進口依賴度不得超過 65%",
@@ -675,7 +760,8 @@
           layer: 3,
           officialUrl: "https://www.iso.org/standard/80649.html",
           eurlexUrl: "https://www.iso.org/committee/7203984.html",
-          dppRole: "為 DPP 提供國際認可的產品循環度數據格式 (ISO 59040)，確保跨國供應鏈循環度數值之信任與一致性。",
+          dppRole: "為產品數位護照提供國際認可的產品循環度數據格式 (ISO 59040)，確保跨國供應鏈循環度數值之信任與一致性。",
+          sectors: ["全產業通用循環度指標", "跨國零組件製造商", "循環度第三方查驗機構", "綠色供應鏈評級"],
           requirements: [
             "ISO 59004：確立循環經濟之術語、原則與實踐指導核心",
             "ISO 59020：衡量循環度表現（物質流分析 MFA 與環境衝擊評估）",
@@ -705,7 +791,8 @@
           layer: 3,
           officialUrl: "https://uncefact.unece.org/display/uncefactpublic/UN+Transparency+Protocol",
           eurlexUrl: "https://unece.org/trade/traceability",
-          dppRole: "全球 DPP 底層信任協議！提供跨歐盟、美洲與亞洲供應鏈的去中心化數位憑證與防偽驗證基石。",
+          dppRole: "全球產品數位護照底層信任協議！提供跨歐盟、美洲與亞洲供應鏈的去中心化數位憑證與防偽驗證基石。",
+          sectors: ["紡織成衣國際供應鏈", "關鍵金屬跨國貿易", "農林產品溯源", "海關通關查核系統"],
           requirements: [
             "基於 W3C DID 與 Verifiable Credentials (VC) 的非對稱加密簽章體系",
             "GS1 EPCIS 2.0 供應鏈關鍵追蹤事件 (CTE) 與關鍵資料元素 (KDE) 對接",
@@ -714,17 +801,40 @@
         }
       ],
       relations: [
-        { source: "ceap", target: "espr", label: "授權制定數位產品護照母法", desc: "CEAP 委任 ESPR 成為歐盟綠色產品生態設計實施標準。" },
+        // 頂層戰略下發
+        { source: "ceap", target: "espr", label: "授權制定產品數位護照母法", desc: "CEAP 委任 ESPR 成為歐盟綠色產品生態設計實施標準。" },
+        { source: "ceap", target: "empco", label: "賦予消費者綠色轉型權益", desc: "CEAP 定調保護消費者免受漂綠欺瞞，推動調和化耐用度資訊透明化。" },
+        { source: "ceap", target: "ppwr", label: "循環包裝減量戰略指標", desc: "CEAP 指派 PPWR 全面淘汰一次性包裝並落實可回收化。" },
+        { source: "ceap", target: "crma", label: "原物料閉路循環要求", desc: "CEAP 要求關鍵原物料建立回收提煉本土產能。" },
+        
+        // 消費端與反漂綠雙軌
+        { source: "empco", target: "greenclaims", label: "反漂綠雙軌互補", desc: "EmpCo 建立消費者法規黑名單禁令，Green Claims 提供具體科學方法學與事前驗證。" },
+        { source: "empco", target: "espr", label: "DPP 查驗消費者權益與禁令", desc: "消費者透過產品數位護照二維條碼查核耐用保固、真實碳排與非碳抵換數據。" },
+        { source: "empco", target: "r2r", label: "維修指數與防過早報廢", desc: "EmpCo 禁止打壓副廠備品與提早耗竭，連動 R2R 權利落地。" },
+        { source: "greenclaims", target: "espr", label: "DPP 數據支撐環境聲明真實性", desc: "企業宣稱的環保特徵，必須藉由產品數位護照資料載體內的 PEF 與成分數據佐證。" },
+        { source: "greenclaims", target: "iso59000", label: "ISO 59020/59040 科學方法佐證", desc: "綠色聲明採用 ISO 循環度量化指標與 PCDS 數據模型進行合規查驗。" },
+
+        // 垂直品類法規與 ESPR (DPP)
         { source: "espr", target: "battery", label: "電池專屬護照品類落地", desc: "電池法規作為首個完全落實 ESPR 護照概念的垂直品類法規。" },
         { source: "espr", target: "ppwr", label: "綠色包裝與調和標籤連動", desc: "ESPR 產品護照要求整合 PPWR 包裝材料回收等級與 QR 碼。" },
         { source: "espr", target: "crma", label: "永久磁鐵與稀土開採溯源", desc: "CRMA 關鍵原物料透過 ESPR DPP 申報再生磁鐵含量與開採責任。" },
-        { source: "espr", target: "r2r", label: "開放維修零件爆炸圖與指南", desc: "DPP 資料載體直接對接消費者維修權所規定的備品訂購系統。" },
-        { source: "reach", target: "espr", label: "揭露 >0.1% 關注物質 (SoC)", desc: "ECHA SVHC 清單化學物質透過 DPP 資料欄位強制揭露。" },
+        { source: "espr", target: "r2r", label: "開放維修零件爆炸圖與指南", desc: "產品數位護照資料載體直接對接消費者維修權所規定的備品訂購系統。" },
+
+        // 化學、原物料、供應鏈與溯源跨法規
+        { source: "reach", target: "espr", label: "揭露 >0.1% 關注物質 (SoC)", desc: "ECHA SVHC 清單化學物質透過產品數位護照資料欄位強制揭露。" },
+        { source: "reach", target: "ppwr", label: "包裝材料 PFAS 禁用規範", desc: "REACH 限制物質清單直接約束食品接觸包裝之化學安全閾值。" },
+        { source: "crma", target: "battery", label: "電池關鍵原物料回收配額", desc: "CRMA 策略原物料目標對接電池法規中鈷、鋰、鎳強制回收比例。" },
+        { source: "crma", target: "csddd", label: "高風險礦區人權環境盡職調查", desc: "關鍵原物料開採鏈需遵循 CSDDD 實施強制性盡職審查。" },
         { source: "eudr", target: "espr", label: "木質纖維與橡膠 GPS 多邊形", desc: "紡織品或鞋類中的天然橡膠/木質纖維需勾稽 EUDR 經緯度座標。" },
+        { source: "eudr", target: "ppwr", label: "紙質紙漿包裝零毀林追溯", desc: "紙質包裝材需提供木質纖維地塊無毀林衛星定位佐證。" },
         { source: "cbam", target: "espr", label: "產品隱含碳排數據整合", desc: "鋼鐵、鋁製產品的 DPP 碳足跡與 CBAM 進口碳關稅申報表完全同源。" },
         { source: "csddd", target: "espr", label: "產品級護照聚合至企業 ESG 報告", desc: "從各產品護照的供應鏈資料向上滾算為 CSRD/CSDDD 企業盡職確信。" },
-        { source: "iso59000", target: "espr", label: "ISO 59040 PCDS 標準資料交換", desc: "DPP 核心資料架構採納 ISO 59040 循環度資料表格式。" },
-        { source: "untp", target: "espr", label: "W3C VC / DID 跨國去中心化憑證", desc: "UNTP 提供跨歐盟海關與全球供應商的去中心化可驗證憑證傳輸體系。" }
+
+        // 國際標準與通訊協定
+        { source: "iso59000", target: "espr", label: "ISO 59040 PCDS 標準資料交換", desc: "產品數位護照核心資料架構採納 ISO 59040 循環度資料表格式。" },
+        { source: "untp", target: "espr", label: "W3C VC / DID 跨國去中心化憑證", desc: "UNTP 提供跨歐盟海關與全球供應商的去中心化可驗證憑證傳輸體系。" },
+        { source: "untp", target: "eudr", label: "林地 GPS 與溯源事件可驗證憑證", desc: "UNTP EPCIS 2.0 封裝 EUDR 地塊座標，防止供應鏈跨國篡改。" },
+        { source: "untp", target: "crma", label: "關鍵原物料產地數位防偽證書", desc: "利用去中心化身分 DID 簽發關鍵礦產從礦場到精煉廠之鏈上溯源。" }
       ]
     };
 
@@ -1170,7 +1280,7 @@
       });
 
       // Update Active Counter
-      document.getElementById('active-laws-counter').textContent = `${activeCount} / 11 運作中`;
+      document.getElementById('active-laws-counter').textContent = `${activeCount} / 12 運作中`;
 
       // Status Badge description according to real EU milestones
       const badge = document.getElementById('timeline-status-badge');
@@ -1181,22 +1291,19 @@
         badge.textContent = "2020 年 03 月 CEAP 確立循環經濟與產品數位化戰略";
         badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30";
       } else if (monthIndex < ymToIndex(2023, 8)) {
-        badge.textContent = "ESPR、電池法規與 CBAM 草案密集協商審議";
+        badge.textContent = "ESPR、EmpCo(消費者轉型)與 CBAM 草案密集協商審議";
         badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30";
       } else if (monthIndex < ymToIndex(2024, 7)) {
-        badge.textContent = "2023 年電池法規生效 / CBAM 展開過渡期碳申報";
+        badge.textContent = "2024 年 03 月 EmpCo 指令生效 / 07 月 ESPR 母法生效";
         badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30";
-      } else if (monthIndex < ymToIndex(2026, 1)) {
-        badge.textContent = "2024 年 07 月 ESPR 母法生效，DPP 資料架構確立";
-        badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30";
-      } else if (monthIndex < ymToIndex(2027, 2)) {
+      } else if (monthIndex < ymToIndex(2026, 9)) {
         badge.textContent = "2026 年 CBAM 碳憑證收費 / EUDR 零毀林全面對接";
         badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30";
-      } else if (monthIndex < ymToIndex(2030, 1)) {
-        badge.textContent = "2027 年 02 月 電池護照強制核發 / PPWR 循環包裝實施";
+      } else if (monthIndex < ymToIndex(2027, 2)) {
+        badge.textContent = "2026 年 09 月 EmpCo 反漂綠全面適用 / 2027 電池護照強制";
         badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30";
       } else {
-        badge.textContent = "2030 年 全產業數位產品護照跨國聯網成熟期";
+        badge.textContent = "2030 年 全產業產品數位護照跨國聯網成熟期";
         badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30";
       }
 
@@ -1292,18 +1399,41 @@
         selectElem.value = sector;
       }
 
-      // Highlight logic
+      // Highlight logic according to sector relevance
       planetsObjects.forEach(p => {
         const id = p.data.id;
         let visibleInSector = true;
-        if (sector === 'battery') visibleInSector = ['battery', 'crma', 'espr', 'csddd'].includes(id);
-        else if (sector === 'textile') visibleInSector = ['espr', 'reach', 'eudr', 'r2r', 'csddd'].includes(id);
-        else if (sector === 'ict') visibleInSector = ['espr', 'r2r', 'crma', 'reach', 'untp'].includes(id);
-        else if (sector === 'steel') visibleInSector = ['cbam', 'espr', 'csddd', 'iso59000'].includes(id);
-        else if (sector === 'packaging') visibleInSector = ['ppwr', 'espr', 'reach', 'iso59000'].includes(id);
+        if (sector === 'battery') {
+          // 動力與工業電池：電池法規、關鍵原物料、ESPR、CSDDD盡職、綠色聲明、EmpCo防漂綠、UNTP
+          visibleInSector = ['battery', 'crma', 'espr', 'csddd', 'reach', 'greenclaims', 'empco', 'untp'].includes(id);
+        } else if (sector === 'textile') {
+          // 紡織成衣與鞋類：ESPR、REACH關注化學品、EUDR(橡膠/皮革/木質纖維)、維修權、CSDDD、綠色聲明、EmpCo、UNTP
+          visibleInSector = ['espr', 'reach', 'eudr', 'r2r', 'csddd', 'greenclaims', 'empco', 'untp', 'iso59000'].includes(id);
+        } else if (sector === 'ict') {
+          // 電子資通訊與家電：ESPR、維修權、關鍵原物料(永久磁鐵)、REACH、EmpCo(防計畫性報廢)、UNTP、ISO 59000
+          visibleInSector = ['espr', 'r2r', 'crma', 'reach', 'empco', 'greenclaims', 'untp', 'iso59000'].includes(id);
+        } else if (sector === 'steel') {
+          // 鋼鐵金屬與關鍵原物料：CBAM、CRMA、ESPR、CSDDD、ISO 59000、UNTP
+          visibleInSector = ['cbam', 'crma', 'espr', 'csddd', 'iso59000', 'untp'].includes(id);
+        } else if (sector === 'packaging') {
+          // 包裝與容器廢棄物：PPWR、ESPR、REACH(PFAS禁用)、EUDR(紙質紙漿)、ISO 59000、綠色聲明、EmpCo
+          visibleInSector = ['ppwr', 'espr', 'reach', 'eudr', 'iso59000', 'greenclaims', 'empco'].includes(id);
+        } else if (sector === 'consumer') {
+          // 終端消費品與反漂綠：EmpCo、綠色聲明、維修權、ESPR、PPWR、ISO 59000
+          visibleInSector = ['empco', 'greenclaims', 'r2r', 'espr', 'ppwr', 'iso59000'].includes(id);
+        }
 
         p.mesh.visible = visibleInSector;
         if (p.orbitLine) p.orbitLine.visible = (currentViewMode === 'orbit') && visibleInSector;
+      });
+
+      // Filter relation pipelines
+      relationPipelines.forEach(pipe => {
+        const sourceObj = getEntityObjectById(pipe.sourceId);
+        const targetObj = getEntityObjectById(pipe.targetId);
+        const shouldShow = (sourceObj && sourceObj.visible) && (targetObj && targetObj.visible);
+        pipe.line.visible = shouldShow;
+        pipe.particles.visible = shouldShow;
       });
     }
 
@@ -1406,6 +1536,20 @@
       document.getElementById('drawer-dg-desc').textContent = data.dgRole;
 
       document.getElementById('drawer-dpp-role').textContent = data.dppRole;
+
+      // Applicable Sectors List
+      const sectorsList = document.getElementById('drawer-applicable-sectors');
+      sectorsList.innerHTML = '';
+      if (data.sectors && data.sectors.length > 0) {
+        data.sectors.forEach(sec => {
+          const badge = document.createElement('span');
+          badge.className = "text-[10px] px-2 py-0.5 rounded-md bg-cyan-950/70 text-cyan-300 border border-cyan-500/30 font-medium";
+          badge.textContent = sec;
+          sectorsList.appendChild(badge);
+        });
+      } else {
+        sectorsList.innerHTML = '<span class="text-[10px] text-slate-500">全產業適用</span>';
+      }
 
       // Requirements
       const reqList = document.getElementById('drawer-requirements');
