@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>筆電數位孿生稽核系統 | 環保標章 ✕ 循環標誌 ✕ 碳足跡 ✕ EU DPP</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js (r128) & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #050811;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    #webgl-container {
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+    .glass-panel {
+      background: rgba(13, 19, 33, 0.86);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.6), 0 0 25px rgba(16, 185, 129, 0.05);
+    }
+    .glass-card {
+      background: rgba(22, 30, 49, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover, .glass-card.active-item {
+      background: rgba(16, 185, 129, 0.16);
+      border-color: rgba(52, 211, 153, 0.5);
+    }
+    /* Smooth drawers */
+    #inspectorPanel, #modulesDrawer {
+      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+    }
+    /* Custom Range */
+    input[type=range] {
+      accent-color: #10b981;
+    }
+    /* Thin Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(10, 15, 29, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(52, 211, 153, 0.35);
+      border-radius: 4px;
+    }
+    /* Tab active indicator */
+    .tab-btn.active {
+      color: #34d399;
+      border-bottom: 2px solid #34d399;
+      background: rgba(52, 211, 153, 0.08);
+    }
+  </style>
+</head>
+<body class="text-slate-100 antialiased">
+
+  <!-- 3D Canvas Container -->
+  <div id="webgl-container"></div>
+
+  <!-- ========================================================
+       TOP HEADER (Adaptive Layout)
+       ======================================================== -->
+  <header class="absolute top-0 left-0 right-0 z-20 p-2.5 sm:p-4 flex items-center justify-between pointer-events-none">
+    
+    <!-- Title & Digital Twin Identification -->
+    <div class="glass-panel px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-2.5 pointer-events-auto border-emerald-500/20 max-w-[68vw] sm:max-w-none">
+      <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 flex items-center justify-center text-white text-sm sm:text-base shadow-md shadow-emerald-500/20 flex-shrink-0">
+        <i class="fa-solid fa-seedling"></i>
+      </div>
+      <div class="truncate">
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <h1 class="text-xs sm:text-sm font-bold text-white tracking-tight truncate">筆電四維綠色數位孿生稽核系統</h1>
+          <span class="text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded hidden md:inline-block">ISO 14067 / 11469 / EU DPP</span>
+        </div>
+        <p class="text-[10px] text-slate-400 truncate hidden sm:block">台灣環保標章 ✕ 資源循環標誌 ✕ 碳足跡 PCF ✕ 歐盟數位護照</p>
+      </div>
+    </div>
+
+    <!-- Quick Tools Hub -->
+    <div class="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+      
+      <!-- Desktop Visual Mode Switcher -->
+      <div class="hidden lg:flex items-center bg-slate-900/85 p-1 rounded-xl border border-slate-700/60 glass-panel">
+        <button id="btn-mode-standard" class="px-2.5 py-1 rounded-lg text-xs font-medium text-white bg-emerald-600 shadow transition-all flex items-center gap-1" onclick="setMode('standard')">
+          <i class="fa-solid fa-cube text-[10px]"></i> 實體渲染
+        </button>
+        <button id="btn-mode-xray" class="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1" onclick="setMode('xray')">
+          <i class="fa-solid fa-radiation text-[10px]"></i> X-Ray 透視
+        </button>
+        <button id="btn-mode-carbon" class="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1" onclick="setMode('carbon')">
+          <i class="fa-solid fa-shoe-prints text-[10px]"></i> 碳足跡熱力
+        </button>
+        <button id="btn-mode-mci" class="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1" onclick="setMode('mci')">
+          <i class="fa-solid fa-recycle text-[10px]"></i> 循環度 (MCI)
+        </button>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="glass-panel p-1 rounded-xl flex items-center gap-1">
+        <button id="btn-rotate" title="自動旋轉展示" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-800/80 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-all" onclick="toggleAutoRotate()">
+          <i class="fa-solid fa-arrows-rotate text-xs"></i>
+        </button>
+        <button title="重設鏡頭中心" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-800/80 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-all" onclick="resetCamera()">
+          <i class="fa-solid fa-crosshairs text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Mobile Modules List Toggle -->
+      <button onclick="toggleMobileModulesDrawer()" class="md:hidden glass-panel px-2.5 py-1.5 rounded-xl text-emerald-400 border-emerald-500/30 flex items-center gap-1.5 text-xs font-semibold">
+        <i class="fa-solid fa-layer-group"></i>
+        <span>零組件</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       TOP FLOATING SUB-BAR (Exploded Slider & Mobile Mode Bar)
+       ======================================================== -->
+  <div class="absolute top-14 sm:top-16 left-0 right-0 z-20 flex justify-center px-2.5 pointer-events-none">
+    <div class="glass-panel px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 sm:gap-3 pointer-events-auto border-emerald-500/20 shadow-lg max-w-full">
+      
+      <!-- Mobile Mode Buttons (Icons) -->
+      <div class="flex lg:hidden items-center bg-slate-900/60 p-0.5 rounded-lg border border-slate-700/50">
+        <button id="m-btn-mode-standard" onclick="setMode('standard')" class="w-7 h-7 rounded bg-emerald-600 text-white flex items-center justify-center text-xs" title="實體">
+          <i class="fa-solid fa-cube"></i>
+        </button>
+        <button id="m-btn-mode-xray" onclick="setMode('xray')" class="w-7 h-7 rounded text-slate-400 flex items-center justify-center text-xs" title="透視">
+          <i class="fa-solid fa-radiation"></i>
+        </button>
+        <button id="m-btn-mode-carbon" onclick="setMode('carbon')" class="w-7 h-7 rounded text-slate-400 flex items-center justify-center text-xs" title="碳足跡熱力">
+          <i class="fa-solid fa-shoe-prints"></i>
+        </button>
+        <button id="m-btn-mode-mci" onclick="setMode('mci')" class="w-7 h-7 rounded text-slate-400 flex items-center justify-center text-xs" title="循環度熱力">
+          <i class="fa-solid fa-recycle"></i>
+        </button>
+      </div>
+
+      <div class="h-4 w-[1px] bg-slate-700 hidden sm:block"></div>
+
+      <!-- Exploded View Slider -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <i class="fa-solid fa-arrows-split-up-and-left text-emerald-400 text-xs"></i>
+        <label for="explodeSlider" class="text-[11px] sm:text-xs text-slate-300 font-medium whitespace-nowrap">結構爆炸:</label>
+        <input id="explodeSlider" type="range" min="0" max="100" value="0" class="w-20 sm:w-28 md:w-36 h-1.5 bg-slate-700 rounded-lg cursor-pointer">
+        <span id="explodeVal" class="text-[11px] sm:text-xs text-emerald-400 font-mono w-7 text-right">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       DESKTOP LEFT SIDEBAR / MOBILE SLIDE-OUT DRAWER
+       ======================================================== -->
+  <div id="drawerBackdrop" onclick="closeAllDrawers()" class="fixed inset-0 bg-black/60 z-30 opacity-0 pointer-events-none transition-opacity duration-300 md:hidden"></div>
+
+  <aside id="modulesDrawer" class="fixed md:absolute top-0 bottom-0 left-0 w-80 max-w-[85vw] md:top-24 md:left-4 md:bottom-6 md:w-72 lg:w-80 z-40 md:z-20 flex flex-col gap-3 -translate-x-full md:translate-x-0 pointer-events-auto">
+    <div class="glass-panel p-3.5 sm:p-4 rounded-r-2xl md:rounded-2xl h-full flex flex-col overflow-hidden border-emerald-500/20 bg-slate-900/95 md:bg-slate-900/80">
+      
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-700/60">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-cubes-stacked text-emerald-400 text-sm"></i>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-200">模組化零件與四維標準</h2>
+        </div>
+        <button onclick="closeAllDrawers()" class="md:hidden text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <!-- Quick KPI Overview -->
+      <div class="grid grid-cols-4 gap-1 my-2 text-center">
+        <div class="bg-slate-950/50 p-1 rounded-lg border border-slate-800">
+          <div class="text-[11px] font-bold text-emerald-400 font-mono">100%</div>
+          <div class="text-[8px] text-slate-400">無鹵無汞</div>
+        </div>
+        <div class="bg-slate-950/50 p-1 rounded-lg border border-slate-800">
+          <div class="text-[11px] font-bold text-cyan-400 font-mono">0.88</div>
+          <div class="text-[8px] text-slate-400">平均 MCI</div>
+        </div>
+        <div class="bg-slate-950/50 p-1 rounded-lg border border-slate-800">
+          <div class="text-[11px] font-bold text-amber-400 font-mono">82.8</div>
+          <div class="text-[8px] text-slate-400">kg CO₂e</div>
+        </div>
+        <div class="bg-slate-950/50 p-1 rounded-lg border border-slate-800">
+          <div class="text-[11px] font-bold text-purple-400 font-mono">10組</div>
+          <div class="text-[8px] text-slate-400">DPP 護照</div>
+        </div>
+      </div>
+
+      <!-- Parts Scroll List -->
+      <div class="text-[10px] text-slate-400 px-1 py-0.5 flex justify-between items-center">
+        <span>點選零組件查看四維稽核</span>
+        <span class="text-[9px] text-emerald-400 font-mono">10 Core Modules</span>
+      </div>
+      <div id="partList" class="overflow-y-auto space-y-1.5 pr-1 flex-1">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Author Attribution Footer -->
+      <div class="pt-2 border-t border-slate-800 text-[9px] text-slate-400 text-center leading-tight">
+        工研院綠能所 劉坤興博士 製作<br>
+        <span class="text-slate-500">環保標章 ✕ 循環標誌 ✕ 碳足跡 ✕ DPP 數位孿生</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================================
+       FOUR-IN-ONE REGULATORY INSPECTOR PANEL:
+       - Mobile: True Bottom Sheet (Max 48vh) with Tab Switcher
+       - Desktop: Fixed Right HUD (Width 400px)
+       ======================================================== -->
+  <aside id="inspectorPanel" class="fixed md:absolute z-30 md:z-20 
+    /* Mobile Positioning: Bottom-Sheet */
+    bottom-0 left-0 right-0 max-h-[48vh] rounded-t-3xl md:rounded-2xl
+    /* Desktop Positioning: Right Sidebar */
+    md:top-24 md:right-4 md:bottom-6 md:left-auto md:w-96 md:max-h-none
+    glass-panel flex flex-col overflow-hidden border-emerald-500/20 bg-slate-900/95 md:bg-slate-900/85 shadow-2xl
+    translate-y-full md:translate-y-0 opacity-0 md:opacity-100 pointer-events-auto">
+
+    <!-- Mobile Drag / Visual Touch Bar -->
+    <div class="w-full flex justify-center pt-2 pb-1 md:hidden cursor-pointer" onclick="closeInspector()">
+      <div class="w-10 h-1 bg-slate-600 rounded-full"></div>
+    </div>
+
+    <div class="px-4 pt-2 sm:pt-4 pb-3 flex-1 flex flex-col overflow-hidden">
+      
+      <!-- Panel Header & Target Part Identity -->
+      <div class="border-b border-slate-700/60 pb-2 flex items-start justify-between gap-2">
+        <div class="overflow-hidden">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span id="targetPartBadge" class="text-[9px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">MODULE-01</span>
+            <span id="targetPartCat" class="text-[9px] text-slate-400 border border-slate-700 px-1.5 py-0.2 rounded">外殼結構</span>
+            <span id="targetCarbonBadge" class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">7.8 kg CO₂e</span>
+          </div>
+          <h2 id="targetPartName" class="text-xs sm:text-sm font-bold text-white mt-1 truncate">A件 鋁合金上蓋 (Top Cover / Lid)</h2>
+        </div>
+        
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button onclick="focusCurrentPart()" title="鏡頭聚焦特寫" class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 text-xs">
+            <i class="fa-solid fa-magnifying-glass-location"></i>
+          </button>
+          <button onclick="closeInspector()" title="關閉檢視" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Four-in-One Regulatory Tab Navigation -->
+      <div class="grid grid-cols-4 gap-1 mt-2 mb-2 border-b border-slate-700/60 text-center text-[10px]">
+        <button id="tab-btn-green" class="tab-btn active py-1.5 px-0.5 rounded-t font-semibold flex items-center justify-center gap-1 truncate" onclick="switchTab('green')">
+          <i class="fa-solid fa-seedling text-emerald-400 text-[10px]"></i> 環保標章
+        </button>
+        <button id="tab-btn-circular" class="tab-btn py-1.5 px-0.5 rounded-t font-semibold text-slate-400 flex items-center justify-center gap-1 truncate" onclick="switchTab('circular')">
+          <i class="fa-solid fa-recycle text-cyan-400 text-[10px]"></i> 循環標誌
+        </button>
+        <button id="tab-btn-carbon" class="tab-btn py-1.5 px-0.5 rounded-t font-semibold text-slate-400 flex items-center justify-center gap-1 truncate" onclick="switchTab('carbon')">
+          <i class="fa-solid fa-shoe-prints text-amber-400 text-[10px]"></i> 碳足跡
+        </button>
+        <button id="tab-btn-dpp" class="tab-btn py-1.5 px-0.5 rounded-t font-semibold text-slate-400 flex items-center justify-center gap-1 truncate" onclick="switchTab('dpp')">
+          <i class="fa-solid fa-id-card text-purple-400 text-[10px]"></i> EU DPP
+        </button>
+      </div>
+
+      <!-- Tab Contents (Scrollable inside max-h) -->
+      <div class="flex-1 overflow-y-auto pr-1 text-[11px] leading-relaxed">
+        
+        <!-- 1. 台灣環保標章 TAB -->
+        <div id="tab-content-green" class="space-y-2">
+          <div class="bg-emerald-950/30 p-2.5 rounded-xl border border-emerald-500/20">
+            <div class="font-bold text-emerald-300 flex items-center gap-1.5 text-xs">
+              <i class="fa-solid fa-award"></i> 環境部環保標章規格要點
+            </div>
+            <p id="t-green-clause" class="text-slate-300 mt-1 text-[11px]">
+              機殼 PCR 再生鋁合金含量 ≥ 50%，禁用含溴/氯有害阻燃劑與短鏈氯化石蠟 (SCCP)。
+            </p>
+          </div>
+          <div class="space-y-1.5 divide-y divide-slate-800/80">
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">再生料比例 (PCR)</span>
+              <span id="t-green-pcr" class="text-emerald-400 font-mono font-medium">50% 再生鋁合金</span>
+            </div>
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">RoHS / 有害物質管制</span>
+              <span id="t-green-rohs" class="text-slate-200 font-medium">無六價鉻皮膜 / 無鹵素 (PASS)</span>
+            </div>
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">能源之星 8.0 耗能</span>
+              <span id="t-green-energy" class="text-slate-200 font-medium">待機低功耗設計合規</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 循環標誌與 ISO 11469 TAB -->
+        <div id="tab-content-circular" class="space-y-2 hidden">
+          <div class="bg-cyan-950/30 p-2.5 rounded-xl border border-cyan-500/20">
+            <div class="font-bold text-cyan-300 flex items-center gap-1.5 text-xs">
+              <i class="fa-solid fa-arrows-spin"></i> ISO 11469 材質刻印與易拆解設計
+            </div>
+            <p id="t-circular-marking" class="text-slate-300 mt-1 text-[11px] font-mono">
+              刻印碼：>Al-7075-Recycled< 配合四合一資源回收循環標誌。
+            </p>
+          </div>
+          <div class="space-y-1.5 divide-y divide-slate-800/80">
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">材料循環度指標 (MCI)</span>
+              <span id="t-circular-mci" class="text-cyan-400 font-mono font-bold">0.86 / 1.0 (優等)</span>
+            </div>
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">拆卸耗時 / 扣件型態</span>
+              <span id="t-circular-disassembly" class="text-slate-200 font-medium">單一 PH00 起子 / 40 秒快拆</span>
+            </div>
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">Design for Disassembly</span>
+              <span id="t-circular-dfd" class="text-slate-200 font-medium">全機無死膠、卡榫與防脫落螺釘</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 碳足跡標籤 PCF (ISO 14067) TAB -->
+        <div id="tab-content-carbon" class="space-y-2 hidden">
+          <div class="bg-amber-950/30 p-2.5 rounded-xl border border-amber-500/20">
+            <div class="font-bold text-amber-300 flex items-center gap-1.5 text-xs">
+              <i class="fa-solid fa-fingerprint"></i> ISO 14067 產品生命週期碳足跡 (PCF)
+            </div>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span id="t-carbon-val" class="text-base font-bold font-mono text-amber-400">7.8 kg CO₂e</span>
+              <span id="t-carbon-pct" class="text-[10px] text-slate-400">(佔整機碳足跡 9.4%)</span>
+            </div>
+          </div>
+          <div class="space-y-1.5 divide-y divide-slate-800/80">
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">減碳策略效益</span>
+              <span id="t-carbon-reduction" class="text-emerald-400 font-medium">採用再生鋁減碳 62%</span>
+            </div>
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">碳排主要階段</span>
+              <span id="t-carbon-stage" class="text-slate-200 font-medium">原料開採與電解精煉</span>
+            </div>
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">碳盤查邊界驗證</span>
+              <span class="text-slate-200 font-medium font-mono text-[10px]">Cradle-to-Grave 第三方查證</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 歐盟數位產品護照 EU DPP TAB -->
+        <div id="tab-content-dpp" class="space-y-2 hidden">
+          <div class="bg-purple-950/30 p-2.5 rounded-xl border border-purple-500/20">
+            <div class="font-bold text-purple-300 flex items-center justify-between text-xs">
+              <span><i class="fa-solid fa-qrcode"></i> EU ESPR / CIRPASS DPP 規格</span>
+              <span class="text-[9px] text-purple-400 font-mono">PCDS ISO 59040</span>
+            </div>
+            <div class="mt-1 flex items-center gap-2">
+              <!-- Simulated mini QR Code -->
+              <div class="w-10 h-10 bg-white p-0.5 rounded flex-shrink-0 flex items-center justify-center">
+                <i class="fa-solid fa-qrcode text-slate-900 text-2xl"></i>
+              </div>
+              <div class="truncate">
+                <div class="text-[9px] text-slate-400">GS1 Digital Link 唯一解析識別:</div>
+                <div id="t-dpp-uid" class="font-mono text-[10px] text-purple-300 truncate">urn:dpp:tw:chassis-al-8821</div>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-1.5 divide-y divide-slate-800/80">
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">關鍵原物料宣告 (CRMs)</span>
+              <span id="t-dpp-crm" class="text-purple-300 font-medium">鋁合金 (無衝突金屬)</span>
+            </div>
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">維修權指數 (Repairability)</span>
+              <span id="t-dpp-repair" class="text-slate-200 font-medium font-mono">9.4 / 10 (原廠零件供應8年)</span>
+            </div>
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-400">循環處置指引</span>
+              <span class="text-slate-200 font-medium">閉迴路重熔循環 (Closed Loop)</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Footer -->
+      <div class="pt-2 border-t border-slate-700/60 flex items-center gap-2">
+        <button onclick="focusCurrentPart()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-1.5 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-700/20">
+          <i class="fa-solid fa-crosshairs"></i> 特寫聚焦該模組
+        </button>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- Desktop Bottom Interaction Hint -->
+  <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none hidden md:block">
+    <div class="glass-panel px-4 py-1.5 rounded-full text-[11px] text-slate-400 flex items-center gap-3 shadow-lg">
+      <span><i class="fa-solid fa-computer-mouse text-emerald-400 mr-1"></i> 左鍵旋轉 / 右鍵平移 / 滾輪縮放</span>
+      <span class="text-slate-600">|</span>
+      <span><i class="fa-solid fa-hand-pointer text-emerald-400 mr-1"></i> 點擊 3D 筆電零件查驗四合一綠色標準</span>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       CORE 3D & COMPLIANCE DATA ENGINE
+       ======================================================== -->
+  <script>
+    /* Four-in-One Compliance Database */
+    const LAPTOP_DATA = [
+      {
+        id: 'a_cover',
+        name: 'A件 鋁合金上蓋 (Top Cover / Lid)',
+        badge: 'MODULE-01',
+        category: '機殼結構',
+        explodeOffset: { x: 0, y: 3.2, z: -1.2 },
+        colorHex: 0x64748b,
+        // 1. 環保標章
+        greenClause: '金屬外殼再生金屬含量應達標。本件含 50% 經第三方驗證之回收鋁合金，環保陽極氧化製程，表面免噴塗漆料，便於熔融循環。',
+        greenPcr: '50% Post-Consumer Recycled 陽極鋁',
+        greenRohs: '無六價鉻化學皮膜、無鹵素防焰劑 (PASS)',
+        greenEnergy: '無遮蔽散熱通道設計 (PASS)',
+        // 2. 循環標誌
+        circularMarking: '雷雕規格：>Al-7075-Recycled< 配合 ISO 11469 回收標誌',
+        circularMci: 0.86,
+        circularMciLabel: '0.86 / 1.0 (優等循環)',
+        circularDisassembly: '單一 PH00 起子，拆卸耗時 40 秒',
+        circularDfd: '無化學強效膠，純卡榫與防脫落螺釘',
+        // 3. 碳足跡
+        carbonVal: 7.8,
+        carbonPct: '9.4%',
+        carbonReduction: '採用水力發電再生鋁，減碳 62%',
+        carbonStage: '原料電解與沖壓成形階段',
+        // 4. EU DPP
+        dppUid: 'urn:dpp:tw:chassis-al-8821',
+        dppCrm: '高品質鋁合金 (免衝突金屬溯源證明)',
+        dppRepair: '9.5 / 10 (原廠零件供應 8 年)'
+      },
+      {
+        id: 'screen_bezel',
+        name: 'B件 螢幕面板與窄邊框 (Display & Bezel)',
+        badge: 'MODULE-02',
+        category: '顯示模組',
+        explodeOffset: { x: 0, y: 2.3, z: -0.9 },
+        colorHex: 0x1e293b,
+        greenClause: '100% 無汞 (Mercury-Free) WLED/OLED 節能面板，休眠與待機耗電符合 Energy Star 8.0 綠色標準。',
+        greenPcr: '邊框 35% PCR-ABS/PC 工程塑膠',
+        greenRohs: '重金屬鉛、汞、鎘、六價鉻全零檢出 (PASS)',
+        greenEnergy: '典型運作功耗 < 3.2W (能源之星合規)',
+        circularMarking: '邊框內側壓印：>PC+ABS-FR(40)< 配合回收標誌',
+        circularMci: 0.74,
+        circularMciLabel: '0.74 / 1.0 (中高循環)',
+        circularDisassembly: '易拉快拆膠條，拆解分離 < 75 秒',
+        circularDfd: '面板玻璃與塑料外框無超音波熔接，可完整無損剝離',
+        carbonVal: 18.5,
+        carbonPct: '22.3%',
+        carbonReduction: '次世代低溫製程減碳 14%',
+        carbonStage: '潔淨室薄膜電晶體陣列製程 (高能耗)',
+        dppUid: 'urn:dpp:tw:panel-disp-0043',
+        dppCrm: '銦 (ITO 導電靶材回收履歷)',
+        dppRepair: '8.8 / 10 (提供標準排線更換套件)'
+      },
+      {
+        id: 'hinge_module',
+        name: '雙軸精密強化鉸鏈 (Dual Hinge Mechanism)',
+        badge: 'MODULE-03',
+        category: '機械五金',
+        explodeOffset: { x: 0, y: 1.6, z: -0.6 },
+        colorHex: 0x94a3b8,
+        greenClause: '耐疲勞設計，通過 35,000 次開合極限耐久測試，落實產品生命週期延長 (Life Extension) 法規指標。',
+        greenPcr: '100% 可單一金屬回收鋼鋅複合材',
+        greenRohs: '全無鉛、無鎘防鏽鈍化處理 (PASS)',
+        greenEnergy: '無功耗機械結構',
+        circularMarking: '鋼印規格：>SK5+ZnAl4< 金屬直接分選',
+        circularMci: 0.95,
+        circularMciLabel: '0.95 / 1.0 (極優循環)',
+        circularDisassembly: '左右各 2 顆標準同規格螺絲固定',
+        circularDfd: '獨立模組，損壞時無需更換整面外殼',
+        carbonVal: 1.2,
+        carbonPct: '1.4%',
+        carbonReduction: '冷鍛精密成形，材料利用率達 92%',
+        carbonStage: '金屬冶煉與精密熱處理',
+        dppUid: 'urn:dpp:tw:mech-hg-2026',
+        dppCrm: '鋅合金、高碳彈簧鋼',
+        dppRepair: '9.8 / 10 (極易維護)'
+      },
+      {
+        id: 'c_cover',
+        name: 'C件 鍵盤與掌托總成 (Keyboard & Deck)',
+        badge: 'MODULE-04',
+        category: '使用者輸入',
+        explodeOffset: { x: 0, y: 0.9, z: 0.1 },
+        colorHex: 0x334155,
+        greenClause: '鍵帽與掌托採用 40% 回收 PCR-Polycarbonate。印刷採用低揮發性有機物 (VOC) 水性 UV 墨水，無有毒溶劑殘留。',
+        greenPcr: '40% PCR-PC/ABS + 生質聚合物',
+        greenRohs: '無多溴二苯醚 (PBDE) 與無鹵阻燃 (PASS)',
+        greenEnergy: '背光採用超低功耗微型 Micro-LED',
+        circularMarking: '底殼打印：>PC+ABS-FR(40)< 配合循環箭頭標誌',
+        circularMci: 0.91,
+        circularMciLabel: '0.91 / 1.0 (優等循環)',
+        circularDisassembly: '機械插銷鎖附，拆卸 90 秒',
+        circularDfd: '剪刀腳結構單鍵可拆換，免整組報廢',
+        carbonVal: 3.2,
+        carbonPct: '3.9%',
+        carbonReduction: '生質樹脂替代，原料階段減碳 18%',
+        carbonStage: '射出成形與表面防磨 UV 硬化',
+        dppUid: 'urn:dpp:tw:kb-deck-9901',
+        dppCrm: '高純度聚碳酸酯塑料',
+        dppRepair: '9.2 / 10 (單鍵與模組皆可替換)'
+      },
+      {
+        id: 'mainboard_pcb',
+        name: '綠色無鹵主機板 (Eco Mainboard PCBA)',
+        badge: 'MODULE-05',
+        category: '核心電子',
+        explodeOffset: { x: 0, y: 0.2, z: 0.2 },
+        colorHex: 0x065f46,
+        greenClause: '主機板基板全面採用無鹵素環保耐燃樹脂 (IEC 61249-2-21)，全無鉛錫膏焊接，支援低功耗深度睡眠模式。',
+        greenPcr: '無鹵素 FR-4 環保覆銅基板 (Tg > 170°C)',
+        greenRohs: '符合 RoHS 2.0 十項限制物無鉛無鹵 (PASS)',
+        greenEnergy: '待機休眠功耗 < 0.5W (優於法規 40%)',
+        circularMarking: '金屬標記：Au / Ag / Cu / Pd 貴金屬印刷履歷',
+        circularMci: 0.81,
+        circularMciLabel: '0.81 / 1.0 (良好循環)',
+        circularDisassembly: '標準螺絲拆卸耗時 2.5 分鐘',
+        circularDfd: '關鍵晶片具熱風槍易剝離防焊設計，便於回收提煉',
+        carbonVal: 32.4,
+        carbonPct: '39.1%',
+        carbonReduction: '綠電代工晶圓封裝，減碳 22%',
+        carbonStage: '半導體晶圓製造與多層 PCBA 壓合 (碳熱點)',
+        dppUid: 'urn:dpp:tw:mb-pcba-7712',
+        dppCrm: '鉭 (電容)、金、銀、鈀 (觸點電鍍)',
+        dppRepair: '8.2 / 10 (提供電路圖與診斷代碼)'
+      },
+      {
+        id: 'memory_storage',
+        name: '快拆式 RAM & M.2 NVMe SSD (Memory & Storage)',
+        badge: 'MODULE-06',
+        category: '擴充儲存',
+        explodeOffset: { x: -1.2, y: 0.4, z: 0.4 },
+        colorHex: 0x059669,
+        greenClause: '嚴禁板載焊死記憶體與儲存體。符合防計畫性淘汰 (Anti-Planned Obsolescence) 綠色規範，使用者可自主升級擴充壽命。',
+        greenPcr: '模組化標準插卡，高回收價值金屬',
+        greenRohs: '金手指電鍍無氰化物環保工藝 (PASS)',
+        greenEnergy: '支援 PCIe ASPM 自動節能電源管理',
+        circularMarking: 'JEDEC / NVMe 業界標準規格標章',
+        circularMci: 0.98,
+        circularMciLabel: '0.98 / 1.0 (極優循環)',
+        circularDisassembly: '彈片與單螺絲，15 秒即可自主更換',
+        circularDfd: '標準通用規格，可二次轉移至其他電腦重複使用',
+        carbonVal: 2.1,
+        carbonPct: '2.5%',
+        carbonReduction: '模組重複沿用避免整機報廢 (避免碳浪費)',
+        carbonStage: '快閃記憶體與 DRAM 封裝測試',
+        dppUid: 'urn:dpp:tw:mem-1tb-nvme',
+        dppCrm: '黃金 (觸點)、銅',
+        dppRepair: '10 / 10 (即插即用標準化)'
+      },
+      {
+        id: 'cooling_system',
+        name: '純銅導熱管與無鉛散熱模組 (Thermal Module)',
+        badge: 'MODULE-07',
+        category: '熱管理',
+        explodeOffset: { x: 1.2, y: 0.4, z: -0.3 },
+        colorHex: 0xd97706,
+        greenClause: '熱導管採用 99.9% 純度無氧紫銅 (Cu-DHP)，表面免電鍍處理，散熱鰭片單一金屬化，大幅降低二次冶煉分離能耗。',
+        greenPcr: '99.9% 無氧紫銅 + 生物基扇葉',
+        greenRohs: '純銅無化學重金屬電鍍皮膜 (PASS)',
+        greenEnergy: '流體動壓軸承 (FDB)，節能低噪運轉',
+        circularMarking: '金屬鋼印：>Cu-DHP< 與生物塑料 >PA6-Bio<',
+        circularMci: 0.94,
+        circularMciLabel: '0.94 / 1.0 (優等循環)',
+        circularDisassembly: '4 顆防脫落彈簧螺釘，拆卸 45 秒',
+        circularDfd: '風扇葉輪可扣式免工具拆洗除塵',
+        carbonVal: 4.1,
+        carbonPct: '4.9%',
+        carbonReduction: '再生銅原料添加，減碳 35%',
+        carbonStage: '高純度電解銅精煉製程',
+        dppUid: 'urn:dpp:tw:thermal-cu-3390',
+        dppCrm: '無氧純銅 (Cu)',
+        dppRepair: '9.3 / 10 (更換導熱膏極簡化)'
+      },
+      {
+        id: 'battery_pack',
+        name: '歐盟新規快拆鋰電池模組 (Modular Battery Pack)',
+        badge: 'MODULE-08',
+        category: '儲能系統',
+        explodeOffset: { x: 0, y: -0.7, z: 0.5 },
+        colorHex: 0x0f766e,
+        greenClause: '符合歐盟電池法規 (EU 2023/1542) 與環保標章：消費者無需特殊工具即可於 25 秒內拆卸。禁用強效化學死膠。',
+        greenPcr: '再生鈷 ≥ 16%、再生鋰 ≥ 6% (符合 2031 目標)',
+        greenRohs: '汞 < 1ppm、鎘 < 5ppm、無鉛電芯 (PASS)',
+        greenEnergy: '循環充放電 800 次後容量保持率 ≥ 80%',
+        circularMarking: '廢電池回收標誌 ♻️ 配合二次鋰電池 BSMI 識別',
+        circularMci: 0.92,
+        circularMciLabel: '0.92 / 1.0 (優等循環)',
+        circularDisassembly: '機械拉扣扣鎖，拆卸耗時僅 25 秒',
+        circularDfd: '無任何點膠固定，更換絕不損壞電芯外皮',
+        carbonVal: 12.6,
+        carbonPct: '15.2%',
+        carbonReduction: '乾電極製程導入，烘烤階段減碳 28%',
+        carbonStage: '三元高鎳正極材料合成與高溫化成',
+        dppUid: 'urn:dpp:tw:batt-eu2023-1542',
+        dppCrm: '鋰 (Li)、鈷 (Co)、鎳 (Ni)、天然石墨',
+        dppRepair: '9.6 / 10 (安全免工具更換)'
+      },
+      {
+        id: 'd_cover',
+        name: 'D件 底盤底蓋 (Bottom Chassis Base)',
+        badge: 'MODULE-09',
+        category: '機殼結構',
+        explodeOffset: { x: 0, y: -1.6, z: 0.0 },
+        colorHex: 0x1e293b,
+        greenClause: '重量大於 25 公克塑膠件具清晰清晰雷雕 ISO 11469 材質碼。採用 45% 廢棄家電回收 PCR 塑膠，螺絲採防脫落 (Captive) 設計。',
+        greenPcr: '45% PCR 廢家電回收塑膠合金',
+        greenRohs: '符合 UL94 V-0 耐燃且無鹵無紅磷 (PASS)',
+        greenEnergy: '大面積進風孔流體減阻節能設計',
+        circularMarking: '雷雕規格：>PC+ABS-FR(40)< 配合 ISO 1043 材質標籤',
+        circularMci: 0.93,
+        circularMciLabel: '0.93 / 1.0 (優等循環)',
+        circularDisassembly: '8 顆防脫落螺釘，起子鬆開不掉落失落',
+        circularDfd: '全機殼單一材質，無需分離即可直接破碎造粒',
+        carbonVal: 2.3,
+        carbonPct: '2.8%',
+        carbonReduction: '再生塑料減碳達 54%',
+        carbonStage: '廢家電拆解破碎與改質造粒',
+        dppUid: 'urn:dpp:tw:dcov-pcr45-tw',
+        dppCrm: '改質工程塑料 (PC/ABS)',
+        dppRepair: '9.8 / 10 (快拆便利)'
+      },
+      {
+        id: 'io_ports',
+        name: '可替換 Type-C I/O 子板 (Modular USB-PD Board)',
+        badge: 'MODULE-10',
+        category: '連接介面',
+        explodeOffset: { x: 1.5, y: -0.3, z: 0.4 },
+        colorHex: 0x475569,
+        greenClause: '落實歐盟共通充電器指令 (Common Charger)。最常插拔磨損之 Type-C 埠採獨立子板設計，壞了只換小板不廢主機板。',
+        greenPcr: '強化耐磨金屬屏蔽層 + 高純度觸點',
+        greenRohs: '符合高溫耐焊無鉛規格 (PASS)',
+        greenEnergy: 'USB-PD 3.1 智慧動態供電效率達 94%',
+        circularMarking: '金屬規格：>SUS304-Shield< 標章',
+        circularMci: 0.90,
+        circularMciLabel: '0.90 / 1.0 (優等循環)',
+        circularDisassembly: '排線插拔 + 1 顆螺絲，1 分鐘完成更換',
+        circularDfd: '獨立子板，避免因插孔受損整機汰換',
+        carbonVal: 0.8,
+        carbonPct: '1.0%',
+        carbonReduction: '維修壽命延長帶來的避碳效益顯著',
+        carbonStage: '衝壓屏蔽罩與表面鍍金',
+        dppUid: 'urn:dpp:tw:io-pd140w-01',
+        dppCrm: '金 (電鍍觸點)、不銹鋼',
+        dppRepair: '9.7 / 10 (模組替換成本低廉)'
+      }
+    ];
+
+    /* Three.js Environment Context */
+    let scene, camera, renderer, controls;
+    let partsGroup = new THREE.Group();
+    let currentMode = 'standard';
+    let currentTab = 'green';
+    let explodeProgress = 0.0;
+    let targetExplode = 0.0;
+    let isAutoRotating = false;
+    let selectedPartId = null;
+    let partMeshes = {};
+    let hotspotSprites = [];
+    let raycaster = new THREE.Raycaster();
+    let mouse = new THREE.Vector2();
+
+    const container = document.getElementById('webgl-container');
+
+    function init() {
+      // Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x050811);
+      scene.fog = new THREE.FogExp2(0x050811, 0.038);
+
+      // Camera: Mobile-aware distance setup
+      const isMobile = window.innerWidth < 768;
+      const initialCamZ = isMobile ? 12 : 9;
+      const initialCamY = isMobile ? 7 : 6;
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(7, initialCamY, initialCamZ);
+
+      // WebGL Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      container.appendChild(renderer.domElement);
+
+      // Orbit Controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.maxPolarAngle = Math.PI / 2 + 0.06;
+      controls.minDistance = 3.5;
+      controls.maxDistance = 24;
+      controls.target.set(0, 0, 0);
+
+      setupLighting();
+      createEnvironment();
+      buildModularLaptopModel();
+      scene.add(partsGroup);
+
+      // Events
+      window.addEventListener('resize', onWindowResize);
+      container.addEventListener('pointerdown', onPointerDown);
+
+      // Exploded Slider
+      const slider = document.getElementById('explodeSlider');
+      slider.addEventListener('input', (e) => {
+        targetExplode = e.target.value / 100;
+        document.getElementById('explodeVal').innerText = `${e.target.value}%`;
+      });
+
+      // Build initial list & start
+      buildPartsUIList();
+      animate();
+    }
+
+    /* Lighting Setup */
+    function setupLighting() {
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+      scene.add(ambientLight);
+
+      const keyLight = new THREE.DirectionalLight(0xe0f2fe, 1.3);
+      keyLight.position.set(8, 12, 6);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.width = 1024;
+      keyLight.shadow.mapSize.height = 1024;
+      keyLight.shadow.camera.near = 0.5;
+      keyLight.shadow.camera.far = 30;
+      keyLight.shadow.bias = -0.0005;
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0x10b981, 0.4);
+      fillLight.position.set(-8, 5, -5);
+      scene.add(fillLight);
+
+      const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.55);
+      rimLight.position.set(0, 8, -10);
+      scene.add(rimLight);
+    }
+
+    /* Floor Grid */
+    function createEnvironment() {
+      const grid = new THREE.GridHelper(22, 40, 0x10b981, 0x1e293b);
+      grid.position.y = -2.1;
+      scene.add(grid);
+
+      const shadowPlaneGeo = new THREE.PlaneGeometry(32, 32);
+      const shadowPlaneMat = new THREE.ShadowMaterial({ opacity: 0.35 });
+      const shadowPlane = new THREE.Mesh(shadowPlaneGeo, shadowPlaneMat);
+      shadowPlane.rotation.x = -Math.PI / 2;
+      shadowPlane.position.y = -2.11;
+      shadowPlane.receiveShadow = true;
+      scene.add(shadowPlane);
+    }
+
+    /* Procedural 3D Modular Laptop Construction */
+    function buildModularLaptopModel() {
+      const W = 4.6;
+      const D = 3.0;
+
+      // Realistic Materials
+      const matTopLid = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.85, roughness: 0.25 });
+      const matBezel = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.15, roughness: 0.6 });
+      const matDisplay = new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0369a1, emissiveIntensity: 0.35, roughness: 0.1 });
+      const matChassisC = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.75, roughness: 0.3 });
+      const matChassisD = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.3, roughness: 0.5 });
+      const matPCB = new THREE.MeshStandardMaterial({ color: 0x064e3b, metalness: 0.2, roughness: 0.4 });
+      const matBattery = new THREE.MeshStandardMaterial({ color: 0x0d9488, metalness: 0.2, roughness: 0.3 });
+      const matCopper = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.9, roughness: 0.2 });
+      const matHinge = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.15 });
+      const matKeys = new THREE.MeshStandardMaterial({ color: 0x090d16, metalness: 0.1, roughness: 0.5 });
+      const matTrackpad = new THREE.MeshStandardMaterial({ color: 0x3b4252, metalness: 0.4, roughness: 0.2 });
+
+      // 1. A-Cover
+      const aGroup = new THREE.Group();
+      const aLidMesh = new THREE.Mesh(new THREE.BoxGeometry(W, 0.08, D), matTopLid);
+      aLidMesh.castShadow = true;
+      aGroup.add(aLidMesh);
+      const logoMesh = new THREE.Mesh(new THREE.RingGeometry(0.15, 0.25, 24), new THREE.MeshBasicMaterial({ color: 0x34d399, side: THREE.DoubleSide }));
+      logoMesh.rotation.x = -Math.PI / 2;
+      logoMesh.position.y = 0.045;
+      aGroup.add(logoMesh);
+      registerPart('a_cover', aGroup, { x: 0, y: 0.9, z: -1.0 });
+
+      // 2. B-Cover (Display & Bezel)
+      const bGroup = new THREE.Group();
+      const bezelFrame = new THREE.Mesh(new THREE.BoxGeometry(W * 0.97, 0.03, D * 0.96), matBezel);
+      bezelFrame.position.y = -0.04;
+      bGroup.add(bezelFrame);
+      const screenPanel = new THREE.Mesh(new THREE.PlaneGeometry(W * 0.88, D * 0.82), matDisplay);
+      screenPanel.rotation.x = Math.PI / 2;
+      screenPanel.position.y = -0.056;
+      bGroup.add(screenPanel);
+      registerPart('screen_bezel', bGroup, { x: 0, y: 0.85, z: -1.0 });
+
+      // 3. Hinges
+      const hGroup = new THREE.Group();
+      const hingeGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.6, 16);
+      hingeGeo.rotateZ(Math.PI / 2);
+      const hingeLeft = new THREE.Mesh(hingeGeo, matHinge);
+      hingeLeft.position.set(-1.6, 0, -D / 2 + 0.1);
+      const hingeRight = new THREE.Mesh(hingeGeo, matHinge);
+      hingeRight.position.set(1.6, 0, -D / 2 + 0.1);
+      hGroup.add(hingeLeft, hingeRight);
+      registerPart('hinge_module', hGroup, { x: 0, y: 0.45, z: -0.5 });
+
+      // 4. C-Cover Keyboard Deck
+      const cGroup = new THREE.Group();
+      const cBody = new THREE.Mesh(new THREE.BoxGeometry(W, 0.08, D), matChassisC);
+      cBody.castShadow = true;
+      cGroup.add(cBody);
+      const tpMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.8), matTrackpad);
+      tpMesh.rotation.x = -Math.PI / 2;
+      tpMesh.position.set(0, 0.042, 0.85);
+      cGroup.add(tpMesh);
+      const keyGeo = new THREE.BoxGeometry(0.22, 0.04, 0.20);
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 14; c++) {
+          const kMesh = new THREE.Mesh(keyGeo, matKeys);
+          kMesh.position.set((c - 6.5) * 0.26, 0.05, (r - 2.5) * 0.24 - 0.35);
+          cGroup.add(kMesh);
+        }
+      }
+      registerPart('c_cover', cGroup, { x: 0, y: 0.3, z: 0.0 });
+
+      // 5. Mainboard PCB
+      const pcbGroup = new THREE.Group();
+      const pcbMesh = new THREE.Mesh(new THREE.BoxGeometry(W * 0.85, 0.03, D * 0.45), matPCB);
+      pcbMesh.position.set(0, 0, -0.45);
+      pcbGroup.add(pcbMesh);
+      const cpuChip = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.02, 0.6), new THREE.MeshStandardMaterial({ color: 0x111827 }));
+      cpuChip.position.set(-0.7, 0.025, -0.45);
+      pcbGroup.add(cpuChip);
+      registerPart('mainboard_pcb', pcbGroup, { x: 0, y: 0.0, z: 0.0 });
+
+      // 6. RAM & NVMe SSD
+      const memGroup = new THREE.Group();
+      const ramGeo = new THREE.BoxGeometry(0.7, 0.03, 0.35);
+      const ramStick1 = new THREE.Mesh(ramGeo, new THREE.MeshStandardMaterial({ color: 0x047857 }));
+      ramStick1.position.set(0.6, 0.03, -0.3);
+      const ramStick2 = ramStick1.clone();
+      ramStick2.position.set(0.6, 0.06, -0.3);
+      memGroup.add(ramStick1, ramStick2);
+      const ssdStick = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.02, 0.25), new THREE.MeshStandardMaterial({ color: 0x065f46 }));
+      ssdStick.position.set(-1.3, 0.03, -0.2);
+      memGroup.add(ssdStick);
+      registerPart('memory_storage', memGroup, { x: -0.2, y: 0.05, z: 0.0 });
+
+      // 7. Thermal Heatpipe & Fan
+      const coolGroup = new THREE.Group();
+      const pipeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.025, 0.08), matCopper);
+      pipeMesh.position.set(0.2, 0.045, -0.65);
+      coolGroup.add(pipeMesh);
+      const fanHousing = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.07, 20), matBezel);
+      fanHousing.position.set(1.4, 0.04, -0.65);
+      coolGroup.add(fanHousing);
+      registerPart('cooling_system', coolGroup, { x: 0.2, y: 0.08, z: -0.1 });
+
+      // 8. Battery Pack
+      const battGroup = new THREE.Group();
+      const battMain = new THREE.Mesh(new THREE.BoxGeometry(W * 0.78, 0.065, D * 0.38), matBattery);
+      battMain.position.set(0, 0, 0.75);
+      battGroup.add(battMain);
+      const pullTab = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.015, 0.15), new THREE.MeshStandardMaterial({ color: 0x10b981 }));
+      pullTab.position.set(0, 0.04, 0.98);
+      battGroup.add(pullTab);
+      registerPart('battery_pack', battGroup, { x: 0, y: -0.15, z: 0.2 });
+
+      // 9. D-Cover
+      const dGroup = new THREE.Group();
+      const dBody = new THREE.Mesh(new THREE.BoxGeometry(W, 0.08, D), matChassisD);
+      dBody.castShadow = true;
+      dGroup.add(dBody);
+      registerPart('d_cover', dGroup, { x: 0, y: -0.35, z: 0.0 });
+
+      // 10. Type-C I/O Sub-board
+      const ioGroup = new THREE.Group();
+      const ioBoard = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.7), matPCB);
+      ioBoard.position.set(W / 2 - 0.28, 0, 0.1);
+      ioGroup.add(ioBoard);
+      const portGeo = new THREE.BoxGeometry(0.12, 0.04, 0.18);
+      const portMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9 });
+      const port1 = new THREE.Mesh(portGeo, portMat);
+      port1.position.set(W / 2 - 0.02, 0.01, 0.22);
+      const port2 = new THREE.Mesh(portGeo, portMat);
+      port2.position.set(W / 2 - 0.02, 0.01, -0.05);
+      ioGroup.add(port1, port2);
+      registerPart('io_ports', ioGroup, { x: 0.3, y: -0.05, z: 0.1 });
+
+      createHotspotSprites();
+    }
+
+    function registerPart(id, group, basePos) {
+      group.position.set(basePos.x, basePos.y, basePos.z);
+      group.userData = { id, basePos };
+
+      group.traverse(child => {
+        if (child.isMesh) {
+          child.userData = { partId: id, originalMaterial: child.material };
+        }
+      });
+      partMeshes[id] = group;
+      partsGroup.add(group);
+    }
+
+    function createHotspotSprites() {
+      LAPTOP_DATA.forEach(part => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+
+        ctx.beginPath();
+        ctx.arc(32, 32, 22, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#10b981';
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(32, 32, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#34d399';
+        ctx.fill();
+
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: new THREE.CanvasTexture(canvas),
+          depthTest: false,
+          depthWrite: false,
+          transparent: true,
+          opacity: 0.85
+        }));
+        sprite.scale.set(0.35, 0.35, 0.35);
+        sprite.userData = { partId: part.id };
+
+        const group = partMeshes[part.id];
+        if (group) {
+          sprite.position.set(0, 0.15, 0);
+          group.add(sprite);
+          hotspotSprites.push(sprite);
+        }
+      });
+    }
+
+    /* Raycasting & Selection */
+    function onPointerDown(event) {
+      const isMobile = window.innerWidth < 768;
+      if (!isMobile) {
+        if (event.clientX < 330 || event.clientX > window.innerWidth - 420 || event.clientY < 75) return;
+      } else {
+        // Mobile guard: If clicking inside bottom-sheet area or top bar, ignore
+        if (event.clientY > window.innerHeight * 0.52 || event.clientY < 65) return;
+      }
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(partsGroup.children, true);
+
+      if (intersects.length > 0) {
+        let hit = intersects[0].object;
+        let partId = hit.userData.partId;
+        while (!partId && hit.parent && hit.parent !== partsGroup) {
+          hit = hit.parent;
+          if (hit.userData && hit.userData.partId) partId = hit.userData.partId;
+        }
+        if (partId) selectPart(partId);
+      } else {
+        if (isMobile && selectedPartId) {
+          closeInspector();
+        }
+      }
+    }
+
+    /* Build Parts List UI */
+    function buildPartsUIList() {
+      const listEl = document.getElementById('partList');
+      listEl.innerHTML = '';
+
+      LAPTOP_DATA.forEach(part => {
+        const item = document.createElement('div');
+        item.id = `item-${part.id}`;
+        item.className = 'glass-card p-2 rounded-xl cursor-pointer flex items-center justify-between text-left';
+        item.onclick = () => {
+          selectPart(part.id);
+          if (window.innerWidth < 768) closeAllDrawers();
+        };
+
+        item.innerHTML = `
+          <div class="flex items-center gap-2 overflow-hidden">
+            <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${'#' + part.colorHex.toString(16).padStart(6, '0')}"></div>
+            <div class="truncate">
+              <div class="font-medium text-[11px] text-slate-200 truncate">${part.name}</div>
+              <div class="text-[9px] text-slate-400 font-mono">${part.carbonVal} kg CO₂e • MCI ${part.circularMci}</div>
+            </div>
+          </div>
+          <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400 border border-emerald-500/20">${part.badge.replace('MODULE-', 'M')}</span>
+        `;
+        listEl.appendChild(item);
+      });
+    }
+
+    /* Part Selection & Four-in-One Data Injection */
+    function selectPart(partId) {
+      selectedPartId = partId;
+      const part = LAPTOP_DATA.find(p => p.id === partId);
+      if (!part) return;
+
+      // Header Identity
+      document.getElementById('targetPartBadge').innerText = part.badge;
+      document.getElementById('targetPartCat').innerText = part.category;
+      document.getElementById('targetCarbonBadge').innerText = `${part.carbonVal} kg CO₂e`;
+      document.getElementById('targetPartName').innerText = part.name;
+
+      // 1. 環保標章
+      document.getElementById('t-green-clause').innerText = part.greenClause;
+      document.getElementById('t-green-pcr').innerText = part.greenPcr;
+      document.getElementById('t-green-rohs').innerText = part.greenRohs;
+      document.getElementById('t-green-energy').innerText = part.greenEnergy;
+
+      // 2. 循環標誌
+      document.getElementById('t-circular-marking').innerText = part.circularMarking;
+      document.getElementById('t-circular-mci').innerText = part.circularMciLabel;
+      document.getElementById('t-circular-disassembly').innerText = part.circularDisassembly;
+      document.getElementById('t-circular-dfd').innerText = part.circularDfd;
+
+      // 3. 碳足跡
+      document.getElementById('t-carbon-val').innerText = `${part.carbonVal} kg CO₂e`;
+      document.getElementById('t-carbon-pct').innerText = `(佔整機碳足跡 ${part.carbonPct})`;
+      document.getElementById('t-carbon-reduction').innerText = part.carbonReduction;
+      document.getElementById('t-carbon-stage').innerText = part.carbonStage;
+
+      // 4. EU DPP
+      document.getElementById('t-dpp-uid').innerText = part.dppUid;
+      document.getElementById('t-dpp-crm').innerText = part.dppCrm;
+      document.getElementById('t-dpp-repair').innerText = part.dppRepair;
+
+      // Active state in sidebar list
+      document.querySelectorAll('#partList > div').forEach(div => div.classList.remove('active-item'));
+      const activeDiv = document.getElementById(`item-${partId}`);
+      if (activeDiv) {
+        activeDiv.classList.add('active-item');
+        activeDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      openInspector();
+      applyModeMaterialColors();
+    }
+
+    function openInspector() {
+      const panel = document.getElementById('inspectorPanel');
+      panel.classList.remove('translate-y-full', 'opacity-0');
+      panel.classList.add('translate-y-0', 'opacity-100');
+    }
+
+    function closeInspector() {
+      const panel = document.getElementById('inspectorPanel');
+      panel.classList.add('translate-y-full', 'opacity-0');
+      panel.classList.remove('translate-y-0', 'opacity-100');
+      selectedPartId = null;
+      document.querySelectorAll('#partList > div').forEach(div => div.classList.remove('active-item'));
+      applyModeMaterialColors();
+    }
+
+    /* Four-in-One Tab Switching */
+    function switchTab(tabKey) {
+      currentTab = tabKey;
+      ['green', 'circular', 'carbon', 'dpp'].forEach(key => {
+        const btn = document.getElementById(`tab-btn-${key}`);
+        const content = document.getElementById(`tab-content-${key}`);
+        if (key === tabKey) {
+          btn.classList.add('active');
+          btn.classList.remove('text-slate-400');
+          content.classList.remove('hidden');
+        } else {
+          btn.classList.remove('active');
+          btn.classList.add('text-slate-400');
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    /* Smart Camera Focusing for Mobile and Desktop */
+    function focusCurrentPart() {
+      if (!selectedPartId) return;
+      const group = partMeshes[selectedPartId];
+      if (!group) return;
+
+      const targetPos = new THREE.Vector3();
+      group.getWorldPosition(targetPos);
+
+      const isMobile = window.innerWidth < 768;
+      // In mobile mode, offset the target downward in view so it sits in the visible top 52%
+      const offsetY = isMobile ? 1.6 : 0.8;
+      const distZ = isMobile ? 3.6 : 2.8;
+
+      const startPos = camera.position.clone();
+      const endPos = new THREE.Vector3(targetPos.x + 2.0, targetPos.y + offsetY, targetPos.z + distZ);
+      const startTarget = controls.target.clone();
+
+      let t = 0;
+      function animCam() {
+        t += 0.05;
+        camera.position.lerpVectors(startPos, endPos, t);
+        controls.target.lerpVectors(startTarget, targetPos, t);
+        controls.update();
+        if (t < 1.0) requestAnimationFrame(animCam);
+      }
+      animCam();
+    }
+
+    /* Mobile Drawer Management */
+    function toggleMobileModulesDrawer() {
+      const drawer = document.getElementById('modulesDrawer');
+      const backdrop = document.getElementById('drawerBackdrop');
+      const isClosed = drawer.classList.contains('-translate-x-full');
+
+      if (isClosed) {
+        drawer.classList.remove('-translate-x-full');
+        backdrop.classList.remove('opacity-0', 'pointer-events-none');
+        backdrop.classList.add('opacity-100', 'pointer-events-auto');
+        closeInspector();
+      } else {
+        closeAllDrawers();
+      }
+    }
+
+    function closeAllDrawers() {
+      const drawer = document.getElementById('modulesDrawer');
+      const backdrop = document.getElementById('drawerBackdrop');
+      drawer.classList.add('-translate-x-full');
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+      backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+    }
+
+    /* View Modes & Heatmaps */
+    function setMode(mode) {
+      currentMode = mode;
+
+      ['standard', 'xray', 'carbon', 'mci'].forEach(m => {
+        const btn = document.getElementById(`btn-mode-${m}`);
+        const mBtn = document.getElementById(`m-btn-mode-${m}`);
+        const isActive = (m === mode);
+
+        if (btn) {
+          btn.className = isActive 
+            ? 'px-2.5 py-1 rounded-lg text-xs font-medium text-white bg-emerald-600 shadow transition-all flex items-center gap-1'
+            : 'px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1';
+        }
+        if (mBtn) {
+          mBtn.className = isActive
+            ? 'w-7 h-7 rounded bg-emerald-600 text-white flex items-center justify-center text-xs'
+            : 'w-7 h-7 rounded text-slate-400 flex items-center justify-center text-xs';
+        }
+      });
+
+      applyModeMaterialColors();
+    }
+
+    function applyModeMaterialColors() {
+      Object.keys(partMeshes).forEach(id => {
+        const group = partMeshes[id];
+        const partData = LAPTOP_DATA.find(p => p.id === id);
+        const isSelected = (id === selectedPartId);
+
+        group.traverse(child => {
+          if (child.isMesh && child.material) {
+            
+            if (currentMode === 'xray') {
+              child.material.transparent = true;
+              child.material.opacity = (id === 'a_cover' || id === 'c_cover' || id === 'd_cover') ? 0.22 : 0.85;
+              child.material.wireframe = (id === 'a_cover' || id === 'd_cover');
+              child.material.emissive = new THREE.Color(isSelected ? 0x10b981 : 0x064e3b);
+              child.material.emissiveIntensity = isSelected ? 0.6 : 0.25;
+            
+            } else if (currentMode === 'carbon') {
+              // Carbon Footprint Heatmap: High (red/purple) -> Med (yellow) -> Low (green)
+              child.material.transparent = false;
+              child.material.opacity = 1.0;
+              child.material.wireframe = false;
+              let heatColor;
+              if (partData.carbonVal >= 20) heatColor = 0xef4444; // Red (PCBA)
+              else if (partData.carbonVal >= 10) heatColor = 0xf59e0b; // Amber (Display, Battery)
+              else if (partData.carbonVal >= 5) heatColor = 0x06b6d4; // Cyan (Chassis A)
+              else heatColor = 0x10b981; // Green (Low carbon SSD, Hinge, IO)
+              
+              child.material.color = new THREE.Color(heatColor);
+              child.material.emissive = new THREE.Color(heatColor);
+              child.material.emissiveIntensity = isSelected ? 0.6 : 0.25;
+
+            } else if (currentMode === 'mci') {
+              // Circularity Heatmap: Green (high MCI >= 0.9) -> Cyan -> Orange
+              child.material.transparent = false;
+              child.material.opacity = 1.0;
+              child.material.wireframe = false;
+              let mciColor;
+              if (partData.circularMci >= 0.93) mciColor = 0x10b981; // High Green
+              else if (partData.circularMci >= 0.85) mciColor = 0x06b6d4; // Cyan
+              else mciColor = 0xf97316; // Orange (Harder to disassemble display/pcb)
+
+              child.material.color = new THREE.Color(mciColor);
+              child.material.emissive = new THREE.Color(mciColor);
+              child.material.emissiveIntensity = isSelected ? 0.6 : 0.25;
+
+            } else {
+              // Standard PBR Mode
+              child.material.transparent = false;
+              child.material.opacity = 1.0;
+              child.material.wireframe = false;
+              if (child.userData.originalMaterial) child.material = child.userData.originalMaterial;
+              child.material.emissive = isSelected ? new THREE.Color(0x10b981) : new THREE.Color(0x000000);
+              child.material.emissiveIntensity = isSelected ? 0.4 : 0.0;
+            }
+          }
+        });
+      });
+    }
+
+    function toggleAutoRotate() {
+      isAutoRotating = !isAutoRotating;
+      controls.autoRotate = isAutoRotating;
+      controls.autoRotateSpeed = 2.0;
+      const btn = document.getElementById('btn-rotate');
+      if (isAutoRotating) {
+        btn.classList.add('bg-emerald-600', 'text-white');
+      } else {
+        btn.classList.remove('bg-emerald-600', 'text-white');
+      }
+    }
+
+    function resetCamera() {
+      const isMobile = window.innerWidth < 768;
+      const endPos = new THREE.Vector3(7, isMobile ? 7 : 6, isMobile ? 12 : 9);
+      const startPos = camera.position.clone();
+      const startTarget = controls.target.clone();
+      const endTarget = new THREE.Vector3(0, 0, 0);
+
+      let t = 0;
+      function animCam() {
+        t += 0.05;
+        camera.position.lerpVectors(startPos, endPos, t);
+        controls.target.lerpVectors(startTarget, endTarget, t);
+        controls.update();
+        if (t < 1.0) requestAnimationFrame(animCam);
+      }
+      animCam();
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    /* Animation Loop */
+    function animate() {
+      requestAnimationFrame(animate);
+
+      explodeProgress += (targetExplode - explodeProgress) * 0.1;
+      LAPTOP_DATA.forEach(part => {
+        const group = partMeshes[part.id];
+        if (group && group.userData.basePos) {
+          const bp = group.userData.basePos;
+          const off = part.explodeOffset;
+          group.position.x = bp.x + off.x * explodeProgress;
+          group.position.y = bp.y + off.y * explodeProgress;
+          group.position.z = bp.z + off.z * explodeProgress;
+        }
+      });
+
+      const time = performance.now() * 0.003;
+      hotspotSprites.forEach(sprite => {
+        const s = 0.3 + Math.sin(time) * 0.04;
+        sprite.scale.set(s, s, s);
+      });
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    window.onload = () => {
+      init();
+    };
+  </script>
+</body>
+</html>
